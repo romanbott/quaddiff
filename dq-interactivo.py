@@ -6,6 +6,7 @@ from scipy.integrate import romberg
 from scipy.integrate import quad
 from cmath import *
 from multiprocessing import Pool
+from itertools import combinations
 ########################################
 #este archivo trabaja en paralelo y guarda los datos en hoyo.npy
 #Definicion de la diferencial cuadratica
@@ -21,15 +22,42 @@ from multiprocessing import Pool
 def dq(z):
 	evaluacion=fase.conjugate()
 	for x in ceros:
+		evaluacion=evaluacion*(z-x)/abs(z-x)
+	for x in polos:
+		evaluacion=evaluacion*((z-x)/abs(z-x))**-2
+	for x in polosSimples:
+		evaluacion=evaluacion*((z-x)/abs(z-x))**-1
+	return evaluacion.conjugate()
+def DQ(z):
+	evaluacion=fase.conjugate()
+	for x in ceros:
 		evaluacion=evaluacion*(z-x)
 	for x in polos:
 		evaluacion=evaluacion*(z-x)**-2
+	for x in polosSimples:
+		evaluacion=evaluacion*(z-x)**-1
 	return evaluacion.conjugate()
-
+def dqnorm(z):
+	evaluacion=1
+	for x in polos:
+		evaluacion=evaluacion*(abs(z-x))**-2
+	return evaluacion
+def dqNot(z):
+	evaluacion=fase.conjugate()
+	for x in ceros:
+            if x!= z:
+		evaluacion=evaluacion*(z-x)/abs(z-x)
+	for x in polos:
+		evaluacion=evaluacion*((z-x)/abs(z-x))**-2
+	for x in polosSimples:
+		evaluacion=evaluacion*((z-x)/abs(z-x))**-1
+	return evaluacion.conjugate()
 ###### generacion manual de los puntos
 puntos = []
 ceros = []
 polos= []
+polosSimples= []
+tipoPunto='c'
 #for x in np.linspace(-3,3.9,200):
 #	for y in np.linspace(-3,3,20):
 #		puntos.append(complex(-x,y))
@@ -38,20 +66,22 @@ polos= []
 
 
 #parametros
-maxreps=5000 #repeticiones maximas de la rutina de integracion
+maxreps=50000 #repeticiones maximas de la rutina de integracion
 maxint=100
 fase=rect(1,0.5) #fase de la diferencial
-normav=0.01 #determina la norma del campo
-normamax = 1.0 #determina el area dentro de la cual se integra el campo
-t= np.linspace(0,0.40,5) #intervalo temporal
+normav=0.001 #determina la norma del campo
+normamax = abs(complex(3,3)) #determina el area dentro de la cual se integra el campo
+t= np.linspace(0,1,5) #intervalo temporal
 densidadPuntos=0.05 #determina cada cuantas repeticiones de la rutina de integracion se guarda un punto para su graficacion
 colorLineas = 'k'
+colorLineasCriticas = 'r'
 anchoLineas = 0.2
 actualizaClick = 0#determina si se redibuja la figura cada click
 dibujaEjes = 0
 cuadros=2
 rotacion = 2*pi/cuadros
-lim = 3
+raizCubica= rect(1,2*pi/3)
+lim = normamax
 esfera=0
 ####matplotlib
 import matplotlib as mpl
@@ -127,7 +157,8 @@ def f(y,t):
 		#c=10.0**2/abs(z)
 		#print c
 	if z!=0:
-		z=z/abs(z)*normav
+		z=z*normav
+	#	z=z/abs(z)*normav
 	if abs(complex(xi,yi))>1:
 		z=z*abs(complex(xi,yi))
 	#z=z*c
@@ -143,7 +174,8 @@ def fi(y,t):
 	#if abs(z)>10**4:
 		#c=10.0**2/abs(z)
 	if z!=0:
-		z=z/abs(z)*normav
+		z=z*normav
+	#	z=z/abs(z)*normav
 	if abs(complex(xi,yi))>1:
 		z=z*abs(complex(xi,yi))
 	#z=z*c
@@ -178,7 +210,7 @@ def trayectp(z):
 	inicio = z
 	ultimo = z
 	start = z
-	while (10**-4 < abs(dq(fin)) and norma < lim and rep<maxreps and abs(dq(fin))<10**4):
+	while (10**-4 < dqnorm(fin) and cercaPolo(fin) and cercaPoloS(fin) and norma < lim and rep<maxreps and dqnorm(fin)<10**4):
 		sol = odeint(f,[inicio.real, inicio.imag],t,mxstep=maxint)
 		fin= complex(sol[-1,0],sol[-1,1])
 		mon(dq(inicio),dq(fin))
@@ -203,6 +235,16 @@ def trayectp(z):
 		rep=rep+1
 	#print('Trayectoria positiva, '+str(rep)+' repticiones')
 	return coord  
+def cercaPolo(z):
+    global polos
+    for x in polos:
+        if abs(z-x)<10**-2: return False
+    return True
+def cercaPoloS(z):
+    global polosSimpes
+    for x in polosSimples:
+        if abs(z-x)<10**-2: return False
+    return True
 def trayectn(z):
 	global monodromia
 	global patch1
@@ -229,7 +271,7 @@ def trayectn(z):
 	inicio = z
 	ultimo = z
 	start = z
-	while (10**-4 < abs(dq(fin)) and norma < lim and rep<maxreps and abs(dq(fin))<10**4):
+	while (10**-4 < dqnorm(fin) and cercaPolo(fin) and cercaPoloS(fin) and norma < lim and rep<maxreps and dqnorm(fin)<10**4):
 		sol = odeint(fi,[inicio.real, inicio.imag],t,mxstep=maxint)
 		fin= complex(sol[-1,0],sol[-1,1])
 		mon(dq(inicio),dq(fin))
@@ -332,17 +374,20 @@ pool=Pool()
 #np.save("anim.npy",resultado)
 
 #inicializacion de la figura
-fig = plt.figure()
-ax = fig.add_subplot(111, xlim=(-2,2), ylim=(-2,2), autoscale_on=False)
+fig = plt.figure(figsize=(9, 9))
+ax = fig.add_subplot(111, xlim=(-3,3), ylim=(-3,3), autoscale_on=False)
 offs= (0.0, 0.0)
 ax.get_xaxis().set_visible(dibujaEjes)
 ax.get_yaxis().set_visible(dibujaEjes)
 coleccionTrayectorias=[]
 col = LineCollection(coleccionTrayectorias,offsets=offs,color=colorLineas,linewidths=anchoLineas,antialiaseds=True)
+colCriticas = LineCollection(coleccionTrayectorias,offsets=offs,color=colorLineasCriticas,linewidths=anchoLineas,antialiaseds=True)
 ax.add_collection(col, autolim=True)
-
+ax.add_collection(colCriticas, autolim=True)
 def onpress(event):
 	global fase
+        global puntos
+        global tipoPunto
 	if event.key=='d':
 		fase = fase*rect(1,-0.1)
 		col.set_segments(trayectorias(puntos))
@@ -359,27 +404,69 @@ def onpress(event):
 		print('redibujando...')
 		col.set_segments(trayectorias(puntos))
 		fig.canvas.draw()
+	if event.key=='R':
+                puntosExtra=[]
+		print('redibujando criticas...')
+                for x in ceros:
+                    for i  in range(3):
+                        z=x+(raizCubica**i*dqNot(x)**(1/3.0))*0.1
+                        puntosExtra.append(z) 
+		colCriticas.set_segments(trayectorias(puntosExtra))
+		fig.canvas.draw()
 	if event.key=='e':
 		plt.savefig('figura.pgf')
+	if event.key=='C':
+            puntos=[]
+	if event.key=='c':
+            tipoPunto=event.key
+	if event.key=='p':
+            tipoPunto=event.key
+	if event.key=='u':
+            tipoPunto=event.key
+        #if event.key=='l':
+        #    for x in combinations(ceros):
 
+
+
+
+
+def faseSilla(z,w):
+    gama = lambda x: (w-z)*x+z
+    raizI = lambda x: ((w-z)*sqrt(DQ(gama(x)))).imag
+    raizR = lambda x: ((w-z)*sqrt(DQ(gama(x)))).real
+    periodoQI = quad(raizI, 0, 1)
+    periodoQR = quad(raizR, 0, 1)
+    return complex(periodoQR,periodoQI)
+#	periodoQI = quad(raizI, 0, 1)
+#	periodoQR = quad(raizR, 0, 1)
 
 
 def onclick(event):
+	global puntos
+        global tipoPunto
 	if event.button == 1:
-		global puntos
 		puntos.append(complex(event.xdata,event.ydata))
 		print('P')
 		if actualizaClick ==1:
 			col.set_segments(coleccionTrayectorias)
 			fig.canvas.draw()
 	if event.button == 3:
-		global ceros 
-		ceros.append(complex(event.xdata,event.ydata))
-		plt.plot([event.xdata],[event.ydata],'ro')
-		print('C')
-		usarCeros = True
+                if tipoPunto=='c':
+	        	global ceros 
+	        	ceros.append(complex(event.xdata,event.ydata))
+	        	plt.plot([event.xdata],[event.ydata],'ro')
+	        	print('C')
+	        	usarCeros = True
+                if tipoPunto=='p':
+	        	polos.append(complex(event.xdata,event.ydata))
+	        	plt.plot([event.xdata],[event.ydata],'go')
+	        	print('C')
+                if tipoPunto=='u':
+	        	global polosSimples 
+	        	polosSimples.append(complex(event.xdata,event.ydata))
+	        	plt.plot([event.xdata],[event.ydata],'bo')
+	        	print('s')
         if event.button == 2:
-		global polos 
 		polos.append(complex(event.xdata,event.ydata))
 		plt.plot([event.xdata],[event.ydata],'go')
 		print('P')
@@ -421,16 +508,16 @@ def dqq(z):
 	return (fase.conjugate()*(z)*(z-complex(1,1))*(z-complex(1,-1)))
 	#return (fase*(1-z)*(z+1)*(z-complex(1,1))*(z-complex(1,-1))*(z-complex(-1,1))*(z-complex(-1,-1))*(z-complex(0,-1.0))*(z-complex(0,1.0)))
 fases = np.linspace(0,2*pi,500)
-gama = lambda x: complex(x,-x)
-raizI = lambda x: (complex(1,-1)*sqrt(dqq(gama(x)))).imag
-raizR = lambda x: (complex(1,1)*sqrt(dq(gama(x)))).real
-for alfa in fases:
-	fase=rect(1,alfa)
-	#periodoR = romberg(raiz, 0, 1, show=True)
-	periodoQI = quad(raizI, 0, 1)
-	periodoQR = quad(raizR, 0, 1)
-	print("periodo: %g + i%g fase: %g" % (periodoQR[0],periodoQI[0],alfa))
-	if 10**-3>abs(periodoQI[0]):
-		print("la fase buscada es %g+i%g" % (fase.real,fase.imag))
-		break
+#gama = lambda x: complex(x,-x)
+#raizI = lambda x: (complex(1,-1)*sqrt(dqq(gama(x)))).imag
+#raizR = lambda x: (complex(1,1)*sqrt(dq(gama(x)))).real
+#for alfa in fases:
+#	fase=rect(1,alfa)
+#	#periodoR = romberg(raiz, 0, 1, show=True)
+#	periodoQI = quad(raizI, 0, 1)
+#	periodoQR = quad(raizR, 0, 1)
+#	print("periodo: %g + i%g fase: %g" % (periodoQR[0],periodoQI[0],alfa))
+#	if 10**-3>abs(periodoQI[0]):
+#		print("la fase buscada es %g+i%g" % (fase.real,fase.imag))
+#		break
 plt.show()
