@@ -7,6 +7,7 @@ from scipy.integrate import quad
 from cmath import *
 from multiprocessing import Pool
 from itertools import combinations
+from intFormas import intfdz
 ########################################
 #este archivo trabaja en paralelo y guarda los datos en hoyo.npy
 #Definicion de la diferencial cuadratica
@@ -29,14 +30,14 @@ def dq(z):
 		evaluacion=evaluacion*((z-x)/abs(z-x))**-1
 	return evaluacion.conjugate()
 def DQ(z):
-	evaluacion=fase.conjugate()
+	evaluacion=1
 	for x in ceros:
 		evaluacion=evaluacion*(z-x)
 	for x in polos:
 		evaluacion=evaluacion*(z-x)**-2
 	for x in polosSimples:
 		evaluacion=evaluacion*(z-x)**-1
-	return evaluacion.conjugate()
+	return evaluacion
 def dqnorm(z):
 	evaluacion=1
 	for x in polos:
@@ -68,20 +69,21 @@ tipoPunto='c'
 #parametros
 maxreps=50000 #repeticiones maximas de la rutina de integracion
 maxint=100
-fase=rect(1,0.5) #fase de la diferencial
+fase=rect(1,0.0) #fase de la diferencial
 normav=0.001 #determina la norma del campo
-normamax = abs(complex(3,3)) #determina el area dentro de la cual se integra el campo
+normamax = abs(complex(10,10)) #determina el area dentro de la cual se integra el campo
 t= np.linspace(0,1,5) #intervalo temporal
 densidadPuntos=0.05 #determina cada cuantas repeticiones de la rutina de integracion se guarda un punto para su graficacion
 colorLineas = 'k'
 colorLineasCriticas = 'r'
+colorLineasSillas= 'b'
 anchoLineas = 0.2
 actualizaClick = 0#determina si se redibuja la figura cada click
 dibujaEjes = 0
 cuadros=2
 rotacion = 2*pi/cuadros
 raizCubica= rect(1,2*pi/3)
-lim = normamax
+lim = 30
 esfera=0
 ####matplotlib
 import matplotlib as mpl
@@ -210,7 +212,7 @@ def trayectp(z):
 	inicio = z
 	ultimo = z
 	start = z
-	while (10**-4 < dqnorm(fin) and cercaPolo(fin) and cercaPoloS(fin) and norma < lim and rep<maxreps and dqnorm(fin)<10**4):
+	while ( cercaPolo(fin) and cercaPoloS(fin) and norma < lim and rep<maxreps):
 		sol = odeint(f,[inicio.real, inicio.imag],t,mxstep=maxint)
 		fin= complex(sol[-1,0],sol[-1,1])
 		mon(dq(inicio),dq(fin))
@@ -271,7 +273,7 @@ def trayectn(z):
 	inicio = z
 	ultimo = z
 	start = z
-	while (10**-4 < dqnorm(fin) and cercaPolo(fin) and cercaPoloS(fin) and norma < lim and rep<maxreps and dqnorm(fin)<10**4):
+	while ( cercaPolo(fin) and cercaPoloS(fin) and norma < lim and rep<maxreps):
 		sol = odeint(fi,[inicio.real, inicio.imag],t,mxstep=maxint)
 		fin= complex(sol[-1,0],sol[-1,1])
 		mon(dq(inicio),dq(fin))
@@ -382,8 +384,10 @@ ax.get_yaxis().set_visible(dibujaEjes)
 coleccionTrayectorias=[]
 col = LineCollection(coleccionTrayectorias,offsets=offs,color=colorLineas,linewidths=anchoLineas,antialiaseds=True)
 colCriticas = LineCollection(coleccionTrayectorias,offsets=offs,color=colorLineasCriticas,linewidths=anchoLineas,antialiaseds=True)
+colSillas= LineCollection(coleccionTrayectorias,offsets=offs,color=colorLineasSillas,linewidths=anchoLineas,antialiaseds=True)
 ax.add_collection(col, autolim=True)
 ax.add_collection(colCriticas, autolim=True)
+ax.add_collection(colSillas, autolim=False)
 def onpress(event):
 	global fase
         global puntos
@@ -423,20 +427,40 @@ def onpress(event):
             tipoPunto=event.key
 	if event.key=='u':
             tipoPunto=event.key
-        #if event.key=='l':
-        #    for x in combinations(ceros):
+        if event.key=='m':
+            trayectoriasSilla=[]
+            puntosSilla=[]
+	    print('redibujando sillas...')
+            faseOld = fase
+            for x in combinations(ceros,2):
+                z=x[0]
+                w=x[1]
+                faseS=faseSilla(z,w)
+                #fase=faseS.conjugate()
+                fase=faseS**2
+                puntosSilla.append(z-faseS**2*0.01)
+                #tray=trayectoria(z+faseS*0.1)
+                #trayectoriasSilla.append(list(zip(tray[0],tray[1])))
+                #trayectoriasSilla.append(trayectoria(z-faseS**(1/3.0)*0.3))
+                for i in range(3):
+                    puntoInicial=z+raizCubica**i*dqNot(z)**(1.0/3.0)*0.1
+                    trayectoriasSilla.append(trayectoria(puntoInicial))
+                    #plt.plot([puntoInicial.real],[puntoInicial.imag],'bo')
+                print("fase  %g+i%g, z %g+i%g" % (fase.real,fase.imag,z.real,z.imag))
+	    #colSillas.set_segments(trayectorias(puntosSilla))
+            #fase = faseOld
+            colSillas.set_segments(trayectoriasSilla)
+	    fig.canvas.draw()
+                
 
 
 
 
 
 def faseSilla(z,w):
-    gama = lambda x: (w-z)*x+z
-    raizI = lambda x: ((w-z)*sqrt(DQ(gama(x)))).imag
-    raizR = lambda x: ((w-z)*sqrt(DQ(gama(x)))).real
-    periodoQI = quad(raizI, 0, 1)
-    periodoQR = quad(raizR, 0, 1)
-    return complex(periodoQR,periodoQI)
+    f = lambda x: sqrt(DQ(x))
+    faseSilla = intfdz(f,z,w)
+    return faseSilla/abs(faseSilla)
 #	periodoQI = quad(raizI, 0, 1)
 #	periodoQR = quad(raizR, 0, 1)
 
