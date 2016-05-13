@@ -7,7 +7,7 @@ from scipy.integrate import quad
 from cmath import *
 from multiprocessing import Pool
 from itertools import combinations
-from intFormas import intfdz
+from intFormas import intfdz, intfdzCurve
 ########################################
 #este archivo trabaja en paralelo y guarda los datos en hoyo.npy
 #Definicion de la diferencial cuadratica
@@ -72,11 +72,12 @@ maxint=100
 fase=rect(1,0.0) #fase de la diferencial
 normav=0.001 #determina la norma del campo
 normamax = abs(complex(10,10)) #determina el area dentro de la cual se integra el campo
-t= np.linspace(0,1,5) #intervalo temporal
+t= np.linspace(0,.5,2) #intervalo temporal
 densidadPuntos=0.05 #determina cada cuantas repeticiones de la rutina de integracion se guarda un punto para su graficacion
 colorLineas = 'k'
 colorLineasCriticas = 'r'
 colorLineasSillas= 'b'
+colorLineasSillasD= 'g'
 anchoLineas = 0.2
 actualizaClick = 0#determina si se redibuja la figura cada click
 dibujaEjes = 0
@@ -385,9 +386,11 @@ coleccionTrayectorias=[]
 col = LineCollection(coleccionTrayectorias,offsets=offs,color=colorLineas,linewidths=anchoLineas,antialiaseds=True)
 colCriticas = LineCollection(coleccionTrayectorias,offsets=offs,color=colorLineasCriticas,linewidths=anchoLineas,antialiaseds=True)
 colSillas= LineCollection(coleccionTrayectorias,offsets=offs,color=colorLineasSillas,linewidths=anchoLineas,antialiaseds=True)
+colSillasD= LineCollection(coleccionTrayectorias,offsets=offs,color=colorLineasSillasD,linewidths=anchoLineas,antialiaseds=True)
 ax.add_collection(col, autolim=True)
 ax.add_collection(colCriticas, autolim=True)
 ax.add_collection(colSillas, autolim=False)
+ax.add_collection(colSillasD, autolim=False)
 def onpress(event):
 	global fase
         global puntos
@@ -428,30 +431,45 @@ def onpress(event):
 	if event.key=='u':
             tipoPunto=event.key
         if event.key=='m':
-            trayectoriasSilla=[]
-            puntosSilla=[]
-	    print('redibujando sillas...')
-            faseOld = fase
-            for x in combinations(ceros,2):
-                z=x[0]
-                w=x[1]
-                faseS=faseSilla(z,w)
-                #fase=faseS.conjugate()
-                fase=faseS**2
-                puntosSilla.append(z-faseS**2*0.01)
-                #tray=trayectoria(z+faseS*0.1)
-                #trayectoriasSilla.append(list(zip(tray[0],tray[1])))
-                #trayectoriasSilla.append(trayectoria(z-faseS**(1/3.0)*0.3))
-                for i in range(3):
-                    puntoInicial=z+raizCubica**i*dqNot(z)**(1.0/3.0)*0.1
-                    trayectoriasSilla.append(trayectoria(puntoInicial))
-                    #plt.plot([puntoInicial.real],[puntoInicial.imag],'bo')
-                print("fase  %g+i%g, z %g+i%g" % (fase.real,fase.imag,z.real,z.imag))
-	    #colSillas.set_segments(trayectorias(puntosSilla))
-            #fase = faseOld
-            colSillas.set_segments(trayectoriasSilla)
-	    fig.canvas.draw()
-                
+            dibujaSillas()
+
+
+
+
+def dibujaSillas():
+    global fase
+    trayectoriasSilla=[]
+    trayectoriasSillaD=[]
+    puntosSilla=[]
+    print('redibujando sillas...')
+    faseOld = fase
+    for x in combinations(ceros,2):
+        z=x[0]
+        w=x[1]
+        faseS=faseSilla(z,w)
+        faseSD=faseSillaD(z,w,100000)
+        #fase=faseS.conjugate()
+        fase=faseS**2
+        faseD=faseSD**2
+        puntosSilla.append(z-faseS**2*0.01)
+        #tray=trayectoria(z+faseS*0.1)
+        #trayectoriasSilla.append(list(zip(tray[0],tray[1])))
+        #trayectoriasSilla.append(trayectoria(z-faseS**(1/3.0)*0.3))
+     #   for i in range(3):
+     #       puntoInicial=z+raizCubica**i*dqNot(z)**(1.0/3.0)*0.1
+     #       trayectoriasSilla.append(trayectoria(puntoInicial))
+     #       #plt.plot([puntoInicial.real],[puntoInicial.imag],'bo')
+     #   print("fase  %g+i%g, z %g+i%g" % (fase.real,fase.imag,z.real,z.imag))
+        fase=faseD
+        for i in range(3):
+            puntoInicial=z+raizCubica**i*dqNot(z)**(1.0/3.0)*0.1
+            trayectoriasSillaD.append(trayectoria(puntoInicial))
+        print("fase divisiones %g+i%g, z %g+i%g" % (faseD.real,faseD.imag,z.real,z.imag))
+    #colSillas.set_segments(trayectorias(puntosSilla))
+    #fase = faseOld
+    colSillas.set_segments(trayectoriasSilla)
+    colSillasD.set_segments(trayectoriasSillaD)
+    fig.canvas.draw()
 
 
 
@@ -464,6 +482,28 @@ def faseSilla(z,w):
 #	periodoQI = quad(raizI, 0, 1)
 #	periodoQR = quad(raizR, 0, 1)
 
+def faseSillaD(z,w,divisiones):
+    global monodromia
+    global patch1
+    global patch2
+    global ma
+    monodromia, patch1, patch2, ma, = 0, 0, 0, 0
+    incremento=(w-z)/divisiones
+    inicio=DQ(z)
+    fin=z+incremento
+    if (-inicio.real)>abs(inicio.imag) and inicio.imag>0:
+    	patch1=1
+    if (-inicio.real)>abs(inicio.imag) and inicio.imag<0:
+    	patch2=1
+    inicio = z
+    f = lambda x: dist(DQ(x))
+    faseSilla=0
+    for i in range(divisiones):
+	mon(DQ(inicio),DQ(fin))
+        faseSilla += intfdz(f,inicio,fin)
+        inicio=fin
+        fin+=incremento
+    return faseSilla/abs(faseSilla)
 
 def onclick(event):
 	global puntos
