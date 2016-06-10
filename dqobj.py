@@ -8,7 +8,7 @@ from cmath import *
 from multiprocessing import Pool
 from itertools import combinations
 from intFormas import intfdz, intfdzCurve
-from obj import QuadraticDifferential, Monodromy
+from obj import QuadraticDifferential, Monodromy, faseSillaD
 ########################################
 quad=QuadraticDifferential()
 
@@ -28,17 +28,10 @@ def dqnorm(z):
 	for x in polos:
 		evaluacion=evaluacion*(abs(z-x))**-2
 	return evaluacion
-def dqNot(z):
-	evaluacion=fase.conjugate()
-	for x in ceros:
-            if x!= z:
-		evaluacion=evaluacion*(z-x)/abs(z-x)
-	for x in polos:
-		evaluacion=evaluacion*((z-x)/abs(z-x))**-2
-	for x in polosSimples:
-		evaluacion=evaluacion*((z-x)/abs(z-x))**-1
-	return evaluacion.conjugate()
+dqNot=quad.dqNot
+
 ###### generacion manual de los puntos
+fase = quad.phase
 puntos = []
 ceros = quad.zeros
 polos = quad.dblpoles
@@ -66,8 +59,6 @@ colorLineasSillasD= 'g'
 anchoLineas = 0.2
 actualizaClick = 0#determina si se redibuja la figura cada click
 dibujaEjes = 0
-cuadros=2
-rotacion = 2*pi/cuadros
 raizCubica= rect(1,2*pi/3)
 lim = 30
 esfera=0
@@ -75,10 +66,7 @@ esfera=0
 import matplotlib as mpl
 #mpl.use("pgf")
 import matplotlib.pyplot as plt
-#from matplotlib import animation
 from matplotlib.collections import LineCollection
-#from mpl_toolkits import mplot3d as m3d
-###Animacion
 
 
 #Constantes e inicializacion de variables
@@ -135,12 +123,7 @@ def fi(y,t, patch1, patch2, monodromia, ma):
 
 def trayectp(z):
 	norma=0.5
-	#fin=z
-	#x=(2*fin.real/(1+fin*fin.conjugate())).real
-	#y=(2*fin.imag/(1+fin*fin.conjugate())).real
-	#w=((1-fin*fin.conjugate())/(1+fin*fin.conjugate())).real
 	coord=np.array([[z.real,z.imag]])
-	#coord=np.array([[fin.real,fin.imag,0.0]])
 	rep=0
 	inicio=dq(z)
 	fin=z
@@ -257,24 +240,6 @@ def trayectoria(z):
 	return total
 
 #interfaz
-#def onpress(event):
-	#global fase
-	#global pause
-	#if event.key=='d':
-		#fase = fase*rect(1,-0.1)
-		#col.set_segments(trayectorias())
-		#fig.canvas.draw()
-		#print('detecto a')
-		#print(fase)
-	#if event.key=='a':
-		#print(str(len(puntos))+' puntos seleccionados')
-		#pause = True
-		##anim.save('basic_animation.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
-		#anim.save('basic_animation.mp4',bitrate=3000)
-	#if event.key=='r':
-		#print('redibujando...')
-		#col.set_segments(coleccionTrayectorias)
-		#fig.canvas.draw()
 	#if event.key=='e':
 		#plt.savefig('figura.pgf')
 
@@ -289,30 +254,6 @@ def trayectorias(listaPuntos):
 
 
 
-#inicializacion de la rutina en paralelo
-#resTray = pool.map(trayectoria,puntos)
-#pool.close()
-#pool.join()
-#for curvaPrueb in resTray:
-	#coleccionTrayectorias.append(list(zip(curvaPrueb[0],curvaPrueb[1],curvaPrueb[2])))
-##for p in puntos:
-	##curvaPrueb=trayectoria(p)
-	##coleccionTrayectorias.append(list(zip(curvaPrueb[0],curvaPrueb[1],curvaPrueb[2])))
-###########
-#col.set_segments(coleccionTrayectorias)
-
-#def calculaCuadro(i):
-	#fase=rect(1,i*rotacion)
-	#print('cuadro '+str(i))
-	#return trayectorias(puntos)
-#pool=Pool()
-#anim=pool.map(calculaCuadro, range(0,cuadros))
-#pool.close()
-#pool.join()
-
-#sys.stdout.write("\n Escribiendo resultados\n")
-#resultado=np.array(anim)
-#np.save("anim.npy",resultado)
 
 #inicializacion de la figura
 fig = plt.figure(figsize=(9, 9))
@@ -359,7 +300,7 @@ def onpress(event):
 		colCriticas.set_segments(trayectorias(puntosExtra))
 		fig.canvas.draw()
 	if event.key=='e':
-		plt.savefig('figura.pgf')
+		plt.savefig('figura.pdf')
 	if event.key=='C':
             puntos=[]
 	if event.key=='c':
@@ -369,77 +310,35 @@ def onpress(event):
 	if event.key=='u':
             tipoPunto=event.key
         if event.key=='m':
-            dibujaSillas()
+            draw_saddles(10,quad)
 
-
-
-
-def dibujaSillas():
-    global fase
+def compute_saddles(divisiones, quad):
     trayectoriasSilla=[]
     trayectoriasSillaD=[]
     puntosSilla=[]
     print('redibujando sillas...')
-    faseOld = fase
-    for x in combinations(ceros,2):
+    faseOld = quad.phase
+    for x in combinations(quad.zeros,2):
         z=x[0]
         w=x[1]
-        faseS=faseSilla(z,w)
-        faseSD=faseSillaD(z,w,100000)
-        #fase=faseS.conjugate()
-        fase=faseS**2
-        faseD=faseSD**2
-        puntosSilla.append(z-faseS**2*0.01)
-        #tray=trayectoria(z+faseS*0.1)
-        #trayectoriasSilla.append(list(zip(tray[0],tray[1])))
-        #trayectoriasSilla.append(trayectoria(z-faseS**(1/3.0)*0.3))
-     #   for i in range(3):
-     #       puntoInicial=z+raizCubica**i*dqNot(z)**(1.0/3.0)*0.1
-     #       trayectoriasSilla.append(trayectoria(puntoInicial))
-     #       #plt.plot([puntoInicial.real],[puntoInicial.imag],'bo')
-     #   print("fase  %g+i%g, z %g+i%g" % (fase.real,fase.imag,z.real,z.imag))
-        fase=faseD
+        faseSD=faseSillaD(z, w, divisiones, quad)
+        faseD=(faseSD/abs(faseSD))**2
+        quad.phase = faseD.conjugate()
         for i in range(3):
-            puntoInicial=z+raizCubica**i*dqNot(z)**(1.0/3.0)*0.1
+            puntoInicial=z+raizCubica**i*quad.dqNot(z)**(1.0/3.0)*0.1
             trayectoriasSillaD.append(trayectoria(puntoInicial))
-        print("fase divisiones %g+i%g, z %g+i%g" % (faseD.real,faseD.imag,z.real,z.imag))
-    #colSillas.set_segments(trayectorias(puntosSilla))
-    #fase = faseOld
-    colSillas.set_segments(trayectoriasSilla)
-    colSillasD.set_segments(trayectoriasSillaD)
+        print("Fase divisiones %g+i%g, periodo %g+i%g" % (faseD.real,faseD.imag,faseSD.real,faseSD.imag))
+    quad.phase = faseOld
+    return trayectoriasSillaD
+
+
+def draw_saddles(divisiones, quad):
+    colSillasD.set_segments(compute_saddles(divisiones, quad))
     fig.canvas.draw()
 
 
 
 
-
-def faseSilla(z,w):
-    f = lambda x: sqrt(DQ(x))
-    faseSilla = intfdz(f,z,w)
-    return faseSilla/abs(faseSilla)
-
-def faseSillaD(z,w,divisiones):
-    global monodromia
-    global patch1
-    global patch2
-    global ma
-    monodromia, patch1, patch2, ma, = 0, 0, 0, 0
-    incremento=(w-z)/divisiones
-    inicio=DQ(z)
-    fin=z+incremento
-    if (-inicio.real)>abs(inicio.imag) and inicio.imag>0:
-    	patch1=1
-    if (-inicio.real)>abs(inicio.imag) and inicio.imag<0:
-    	patch2=1
-    inicio = z
-    f = lambda x: dist(DQ(x))
-    faseSilla=0
-    for i in range(divisiones):
-	mon(DQ(inicio),DQ(fin))
-        faseSilla += intfdz(f,inicio,fin)
-        inicio=fin
-        fin+=incremento
-    return faseSilla/abs(faseSilla)
 
 def onclick(event):
 	global puntos
@@ -475,34 +374,4 @@ fig.canvas.mpl_connect('key_press_event', onpress)
 fig.canvas.mpl_connect('button_press_event', onclick)
 ##mostrar el ambiente
 
-#def animate(i):
-	#global fase, frame
-	#if pause:
-		#fase = fase*rect(1,rotacion)	
-		#col.set_segments(trayectorias(puntos))
-		#frame = frame+1
-		#print(' Cuadro '+str(frame)+' de 50 completado')
-	#return col,
-
-##anim = animation.FuncAnimation(fig, animate, init_func=init,
-                               ##frames=200, interval=50, blit=True)
-#pool=Pool(1)
-#resTray = pool.map(trayectoria,puntos)
-#pool.close()
-#pool.join()
-#lista=[]
-#for x in puntos:
-	#lista.append(trayectoria(x))
-
-#inicializacion de la figura
-#np.save("hoyo.npy",np.array(resTray))
-#fig = plt.figure()
-#if esfera==1:
-	#ax = fig.add_subplot(111, xlim=(-1,1), ylim=(-1,1), zlim=(-1,1), projection='3d')
-	#col = m3d.art3d.Line3DCollection(resTray,color=colorLineas,linewidths=anchoLineas,antialiaseds=True)
-	#ax.add_collection3d(col)
-#else:
-#plt.savefig('figure.pgf')
-
-fases = np.linspace(0,2*pi,500)
 plt.show()
