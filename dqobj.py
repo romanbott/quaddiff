@@ -9,6 +9,23 @@ from multiprocessing import Pool
 from itertools import combinations
 from intFormas import intfdz, intfdzCurve
 from obj import QuadraticDifferential, Monodromy, faseSillaD
+import cPickle as pickle
+######las buenas
+
+def save_object(obj, filename):
+    with open(filename, 'wb') as output:
+        pickle.dump(obj, output, pickle.HIGHEST_PROTOCOL)
+
+
+def load_object(filename):
+    with open(filename, 'rb') as input:
+        obj=pickle.load(input)
+    return obj
+
+
+
+
+
 ########################################
 quad=QuadraticDifferential()
 
@@ -373,5 +390,5 @@ def onclick(event):
 fig.canvas.mpl_connect('key_press_event', onpress)
 fig.canvas.mpl_connect('button_press_event', onclick)
 ##mostrar el ambiente
-
+plt.ion() #modo interactivo
 plt.show()
