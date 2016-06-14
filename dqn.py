@@ -31,7 +31,7 @@ class QuadraticDrawer:
         self.set_quad(quad)
 
     def __call__(self):
-        pass
+        self.figure.canvas.draw()
 
     def draw_critical(self):
         pass
