@@ -136,7 +136,8 @@ def fi(y,t, patch1, patch2, monodromia, ma):
 	f0 = z.real
 	f1 = z.imag
 	return [f0, f1]
-
+def compute_trajectory(quad, phase, z, norm = 0.5):
+    pass
 
 def trayectp(z):
 	norma=0.5

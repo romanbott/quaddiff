@@ -14,6 +14,7 @@ class QuadraticDifferential:
         self.smplpoles = []
         self.phase = complex(1,0) 
         self.saddles = []
+        self.plotpoints = []
 
     def __call__(self, z):
         result = self.phase
@@ -24,6 +25,9 @@ class QuadraticDifferential:
         for x in self.smplpoles:
             result = result*((z-x)/abs(z-x))**-1
         return result
+
+    def add_plotpoint(self, z):
+        self.plotpoints.append(z)
 
     def add_zero(self, z):
         self.zeros.append(z)
