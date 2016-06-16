@@ -4,6 +4,8 @@
 #
 from intFormas import intfdz, intfdzCurve
 from cmath import *
+import numpy as np
+from scipy.integrate import odeint
 
 class QuadraticDifferential:
     """Esta clase codifica una diferencial cuadratica en el plano"""
@@ -15,6 +17,7 @@ class QuadraticDifferential:
         self.phase = complex(1,0) 
         self.saddles = []
         self.plotpoints = []
+        self.trajectories = {}
 
     def __call__(self, z):
         result = self.phase
@@ -41,7 +44,13 @@ class QuadraticDifferential:
     def compute_saddles(self):
         pass
 
-    def DQ(self, z):
+    def compute_trajectories(self):
+        for p in self.plotpoints:
+            for (p, phase) in ((p, self.phase) for p in self.plotpoints) not in self.trajectories:
+                self.trajectories[(p, self.phase)] = Trajectory(self, p)
+                self.trajectories[(p, self.phase)].trayectp()
+
+    def QD(self, z):
         result = 1.0
 	for x in self.zeros:
 		result = result*(z-x)
@@ -53,7 +62,7 @@ class QuadraticDifferential:
             print("mierda")
 	return result
 
-    def dqNot(self, z):
+    def qd_not(self, z):
 	result = self.phase
 	for x in self.zeros:
             if x!= z:
@@ -63,6 +72,16 @@ class QuadraticDifferential:
 	for x in self.smplpoles:
 		result = result*((z-x)/abs(z-x))**-1
 	return result.conjugate()
+
+    def close_2pole(self, z):
+        for x in self.dblpoles:
+            if abs(z-x) < 10**-2: return False
+        return True
+
+    def close_2smplpole(self, z):
+        for x in self.smplpoles:
+            if abs(z-x) < 10**-2: return False
+        return True
 
 
 class Monodromy:
@@ -74,6 +93,10 @@ class Monodromy:
         self.patch1 = 0
         self.patch2 = 0
         self.source = first
+        if (-first.real)>abs(first.imag) and first.imag>0:
+		self.patch1=1
+	if (-first.real)>abs(first.imag) and first.imag<0:
+		self.patch2=1
 
     def __call__(self, target):
         if self.source.real <= 0 and \
@@ -110,21 +133,78 @@ class Monodromy:
             self.patch2 = 0
         self.source = target
 
+    def result(self):
+        return (self.patch1, self.patch2, self.monodromia, self.ma)
+
+
+
+class Trajectory:
+    """clase que representa una trayectoria y los metodos para calcularla"""
+
+    def __init__(self, quad, plotpoint, phase = None):
+        self._qd = quad
+        if phase: self._phase = phase
+        else: self._phase = quad.phase
+        self.plotpoint = plotpoint
+        self.first = plotpoint
+        self.last = plotpoint
+        self.first_mon = Monodromy(quad(plotpoint))
+        self.last_mon = Monodromy(quad(plotpoint))
+        self.coordinates = np.array([[plotpoint.real, plotpoint.imag]])
+        
+
+    def __call__(self):
+        return self.coordinates
+
+    def trayectp(self):
+        norma = 0.5
+        coord = np.array([[self.last.real, self.last.imag]])
+        rep = 0
+        inicio = self._qd(self.last)
+        fin = self.last
+        mon = self.last_mon
+        inicio = self.last
+        ultimo = self.last
+        start = self.last
+        while (self._qd.close_2pole(fin) and self._qd.close_2smplpole(fin) and norma < lim and rep < maxreps):
+            sol = odeint(self.f, [inicio.real, inicio.imag], t, mxstep = maxint)
+            fin = complex(sol[-1,0], sol[-1,1])
+            mon(self._qd(fin).conjugate())
+            if densidadPuntos < abs(fin-ultimo):
+                coord = np.append(coord, np.array([[fin.real, fin.imag]]), axis = 0)
+                ultimo = fin
+            inicio = fin
+            norma = abs(inicio)
+            if 50 < rep and 0.01 > abs(fin-start):
+                break
+            rep += 1
+        self.coordinates = np.vstack((self.coordinates, coord))
+        self.last = fin
+        return
+
+    def f(self, y, t):
+        x = y[0]
+        y = y[1]
+        z = dist(self._qd(complex(x,y)).conjugate(), self.last_mon.result())
+        z *= normav
+        if abs(complex(x, y)) > 1:
+            z *= abs(complex(x,y))
+        return [z.real, z.imag]
+   
+
+
+lim = 30
+maxreps = 50000
+maxint = 100
+t= np.linspace(0,.5,2) #intervalo temporal
+densidadPuntos=0.05
+normav = 0.001
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-def dist(z, patch1, patch2, monodromia, ma):
+def dist(z, (patch1, patch2, monodromia, ma)):
 	if patch1 != patch2:
 		if patch1:
 			r=ri*(sqrt(z*(-1j)))

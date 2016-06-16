@@ -7,7 +7,7 @@ from cmath import *
 from multiprocessing import Pool
 from itertools import combinations
 from intFormas import intfdz, intfdzCurve
-from obj import QuadraticDifferential, Monodromy, faseSillaD
+from obj import QuadraticDifferential, Monodromy, faseSillaD, Trajectory
 from dqn import QuadraticDrawer
 import cPickle as pickle
 
@@ -45,7 +45,7 @@ def dqnorm(z):
 	for x in polos:
 		evaluacion=evaluacion*(abs(z-x))**-2
 	return evaluacion
-dqNot=quad.dqNot
+dqNot=quad.qd_not
 
 ###### generacion manual de los puntos
 fase = quad.phase
@@ -124,10 +124,7 @@ def trayectp(z):
 	ultimo = z
 	start = z
 	while ( cercaPolo(fin) and cercaPoloS(fin) and norma < lim and rep<maxreps):
-                argumentos = ( mon.patch1, \
-                        mon.patch2, \
-                        mon.monodromia, \
-                        mon.ma)
+                argumentos = mon.result()
 		sol = odeint(f,[inicio.real, inicio.imag],t,mxstep=maxint,args = argumentos)
 		fin= complex(sol[-1,0],sol[-1,1])
 		mon(dq(fin))
@@ -139,18 +136,7 @@ def trayectp(z):
 		norma = abs(inicio)
 		if 50<rep and 0.01>abs(fin-start):
 			break
-	#	if rep%densidadPuntos==1:
-	#		#x=(2*fin.real/(1+fin*fin.conjugate())).real
-	#		#y=(2*fin.imag/(1+fin*fin.conjugate())).real
-	#		#w=((1-fin*fin.conjugate())/(1+fin*fin.conjugate())).real
-	#		if esfera==1:
-	#			coord=np.append(coord,np.array([estereografica(fin)]),axis=0)
-	#		else:
-	#			coord=np.append(coord,np.array([[fin.real,fin.imag]]),axis=0)
-			#coord=np.append(coord,np.array([[fin.real,fin.imag,0.0]]),axis=0)
-			#np.append(coord,[[x,y,w]],axis=0)
 		rep=rep+1
-	#print('Trayectoria positiva, '+str(rep)+' repticiones')
 	return coord  
 def cercaPolo(z):
     global polos
@@ -164,12 +150,7 @@ def cercaPoloS(z):
     return True
 def trayectn(z):
 	norma=0.5
-	#fin=z
-	#x=(2*fin.real/(1+fin*fin.conjugate())).real
-	#y=(2*fin.imag/(1+fin*fin.conjugate())).real
-	#w=((1-fin*fin.conjugate())/(1+fin*fin.conjugate())).real
 	coord=np.array([[z.real,z.imag]])
-	#coord=np.array([[fin.real,fin.imag,0.0]])
 	rep=0
 	inicio=dq(z)
 	fin=z
@@ -197,32 +178,12 @@ def trayectn(z):
 		norma = abs(inicio)
 		if 50<rep and 0.01>abs(fin-start):
 			break
-	#	if rep%densidadPuntos==1:
-	#		if esfera==1:
-	#			coord=np.append(coord,np.array([estereografica(fin)]),axis=0)
-	#		else:
-	#			coord=np.append(coord,np.array([[fin.real,fin.imag]]),axis=0)
-			#x=(2*fin.real/(1+fin*fin.conjugate())).real
-			#y=(2*fin.imag/(1+fin*fin.conjugate())).real
-			#w=((1-fin*fin.conjugate())/(1+fin*fin.conjugate())).real
-			#coord=np.append(coord,np.array([[fin.real,fin.imag,0.0]]),axis=0)
 		rep=rep+1
-	#print('Trayectoria negativa, '+str(rep)+' repticiones')
 	return coord
 def trayectoria(z):
 	tn=trayectn(z)
 	tp=trayectp(z)
 	total=np.vstack((tn[::-1],tp))
-	#x=tn[0]
-	#x.reverse()
-	#x.extend(tp[0])
-	#y=tn[1]
-	#y.reverse()
-	#y.extend(tp[1])
-	#z=tn[2]
-	#z.reverse()
-	#z.extend(tp[2])
-	#print('.'),
 	sys.stdout.write(".")
 	sys.stdout.flush()
 	return total

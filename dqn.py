@@ -7,7 +7,7 @@ from cmath import *
 from multiprocessing import Pool
 from itertools import combinations
 from intFormas import intfdz, intfdzCurve
-from obj import QuadraticDifferential, Monodromy, faseSillaD
+from obj import QuadraticDifferential, Monodromy, faseSillaD, Trajectory
 import cPickle as pickle
 
 
