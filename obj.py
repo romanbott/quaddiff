@@ -133,9 +133,14 @@ class Monodromy:
             self.patch2 = 0
         self.source = target
 
-    def result(self):
-        return (self.patch1, self.patch2, self.monodromia, self.ma)
-
+    def dist(self,z):
+        if self.patch1 != self.patch2:
+            if self.patch1:
+                return (-1)**(self.monodromia+self.ma)*ri*(sqrt(z*(-1j)))
+            if self.patch2:
+                return (-1)**(self.monodromia+self.ma)*ric*(sqrt(z*(1j)))
+        else:
+            return (-1)**(self.monodromia+self.ma)*sqrt(z)
 
 
 class Trajectory:
@@ -148,26 +153,25 @@ class Trajectory:
         self.plotpoint = plotpoint
         self.first = plotpoint
         self.last = plotpoint
-        self.first_mon = Monodromy(quad(plotpoint))
-        self.last_mon = Monodromy(quad(plotpoint))
+        self.first_mon = Monodromy(quad(plotpoint).conjugate())
+        self.last_mon = Monodromy(quad(plotpoint).conjugate())
         self.coordinates = np.array([[plotpoint.real, plotpoint.imag]])
         
 
     def __call__(self):
         return self.coordinates
 
-    def trayectp(self):
+    def traject(self, sign, mon, z):
         norma = 0.5
-        coord = np.array([[self.last.real, self.last.imag]])
+        coord = np.array([[z.real, z.imag]])
         rep = 0
-        inicio = self._qd(self.last)
-        fin = self.last
-        mon = self.last_mon
-        inicio = self.last
-        ultimo = self.last
-        start = self.last
+        fin = z
+        inicio = z
+        ultimo = z
+        start = z
+        F = lambda y,t,mono: [sign*self.f(y,t,mono)[0],sign*self.f(y,t,mono)[1]]
         while (self._qd.close_2pole(fin) and self._qd.close_2smplpole(fin) and norma < lim and rep < maxreps):
-            sol = odeint(self.f, [inicio.real, inicio.imag], t, mxstep = maxint)
+            sol = odeint(F, [inicio.real, inicio.imag], t, mxstep = maxint, args=(mon,))
             fin = complex(sol[-1,0], sol[-1,1])
             mon(self._qd(fin).conjugate())
             if densidadPuntos < abs(fin-ultimo):
@@ -178,14 +182,23 @@ class Trajectory:
             if 50 < rep and 0.01 > abs(fin-start):
                 break
             rep += 1
-        self.coordinates = np.vstack((self.coordinates, coord))
-        self.last = fin
+        return coord
+
+    def tp(self):
+        self.coordinates = np.vstack((self.coordinates,  self.traject(1, self.last_mon, self.last)))
+        self.last=complex(self.coordinates[-1][0], self.coordinates[-1][1])
         return
 
-    def f(self, y, t):
+    def tn(self):
+        self.coordinates = np.vstack((self.traject(-1, self.first_mon, self.first)[::-1], self.coordinates))
+        self.first=complex(self.coordinates[0][0], self.coordinates[0][1])
+        return
+
+
+    def f(self, y, t, mono):
         x = y[0]
         y = y[1]
-        z = dist(self._qd(complex(x,y)).conjugate(), self.last_mon.result())
+        z = mono.dist(self._qd(complex(x,y)).conjugate())
         z *= normav
         if abs(complex(x, y)) > 1:
             z *= abs(complex(x,y))
@@ -199,20 +212,6 @@ maxint = 100
 t= np.linspace(0,.5,2) #intervalo temporal
 densidadPuntos=0.05
 normav = 0.001
-
-
-
-
-
-def dist(z, (patch1, patch2, monodromia, ma)):
-	if patch1 != patch2:
-		if patch1:
-			r=ri*(sqrt(z*(-1j)))
-		if patch2:
-			r=ric*(sqrt(z*(1j)))
-	else:
-		r=sqrt(z)
-	return (-1)**(monodromia+ma)*r
 
 
 def faseSilla(z,w,quad):
