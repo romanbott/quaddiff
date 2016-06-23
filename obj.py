@@ -6,6 +6,8 @@ from intFormas import intfdz, intfdzCurve
 from cmath import *
 import numpy as np
 from scipy.integrate import odeint
+from pathos.multiprocessing import Pool
+import sys
 
 class QuadraticDifferential:
     """Esta clase codifica una diferencial cuadratica en el plano"""
@@ -34,21 +36,40 @@ class QuadraticDifferential:
 
     def add_zero(self, z):
         self.zeros.append(z)
+        self.clear_trajectories()
 
     def add_dblpole(self, z):
         self.dblpoles.append(z)
+        self.clear_trajectories()
 
     def add_smplpole(self, z):
         self.smplpoles.append(z)
+        self.clear_trajectories()
 
     def compute_saddles(self):
         pass
 
+    def clear_trajectories(self):
+        self.trajectories={}
+        self.saddles=[]
+
     def compute_trajectories(self):
+        pool=Pool()
+        result = {}
         for p in self.plotpoints:
-            for (p, phase) in ((p, self.phase) for p in self.plotpoints) not in self.trajectories:
-                self.trajectories[(p, self.phase)] = Trajectory(self, p)
-                self.trajectories[(p, self.phase)].trayectp()
+            if (p, self.phase) not in self.trajectories:
+                result[p] = pool.apply_async(self.compute_trajectory, (p,) )
+        pool.close()
+        pool.join()
+        for p in self.plotpoints:
+            if (p, self.phase) not in self.trajectories:
+                self.trajectories[(p, self.phase)] = result[p].get()
+                
+
+    def compute_trajectory(self, p):
+        t=Trajectory(self, p)
+        e=t()
+        return t
 
     def QD(self, z):
         result = 1.0
@@ -156,9 +177,13 @@ class Trajectory:
         self.first_mon = Monodromy(quad(plotpoint).conjugate())
         self.last_mon = Monodromy(quad(plotpoint).conjugate())
         self.coordinates = np.array([[plotpoint.real, plotpoint.imag]])
-        
 
     def __call__(self):
+        if self.first == self.last:
+            self.tp()
+            self.tn()
+            sys.stdout.write(".")
+            sys.stdout.flush()
         return self.coordinates
 
     def traject(self, sign, mon, z):
@@ -193,7 +218,6 @@ class Trajectory:
         self.coordinates = np.vstack((self.traject(-1, self.first_mon, self.first)[::-1], self.coordinates))
         self.first=complex(self.coordinates[0][0], self.coordinates[0][1])
         return
-
 
     def f(self, y, t, mono):
         x = y[0]
@@ -242,3 +266,5 @@ def faseSillaD(z, w, divisiones, quad):
 
 ri=sqrt(1j)
 ric=sqrt(-1j)
+
+

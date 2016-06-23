@@ -29,6 +29,9 @@ class QuadraticDrawer:
         self.cid_press = None
         self.cid_click = None
         self.set_quad(quad)
+        self.ax = figure.add_subplot(111, xlim=(-3,3), ylim=(-3,3), autoscale_on=False)
+        self.trajectories = LineCollection([],offsets=offs,color='k',linewidths=anchoLineas,antialiaseds=True)
+        self.ax.add_collection(self.trajectories)
 
     def __call__(self):
         self.figure.canvas.draw()
@@ -38,6 +41,16 @@ class QuadraticDrawer:
 
     def draw_saddles(self):
         pass
+
+    def draw_trajectories(self):
+        t=[]
+        self.quadratic_differential.compute_trajectories()
+        all_trajectories = self.quadratic_differential.trajectories
+        for (x,phase) in all_trajectories:
+            if phase == self.quadratic_differential.phase:
+                t.append(all_trajectories[(x,phase)]())
+        self.trajectories.set_segments(t)
+
 
     def set_quad(self, quad):
         if quad == self.quadratic_differential: return
@@ -119,17 +132,16 @@ lim = 30
 
 
 fig = plt.figure(figsize = (9, 9))
-ax = fig.add_subplot(111, xlim=(-3,3), ylim=(-3,3), autoscale_on=False)
 offs= (0.0, 0.0)
 coleccionTrayectorias=[]
 col = LineCollection(coleccionTrayectorias,offsets=offs,color=colorLineas,linewidths=anchoLineas,antialiaseds=True)
 colCriticas = LineCollection(coleccionTrayectorias,offsets=offs,color=colorLineasCriticas,linewidths=anchoLineas,antialiaseds=True)
 colSillas= LineCollection(coleccionTrayectorias,offsets=offs,color=colorLineasSillas,linewidths=anchoLineas,antialiaseds=True)
 colSillasD= LineCollection(coleccionTrayectorias,offsets=offs,color=colorLineasSillasD,linewidths=anchoLineas,antialiaseds=True)
-ax.add_collection(col, autolim=True)
-ax.add_collection(colCriticas, autolim=True)
-ax.add_collection(colSillas, autolim=False)
-ax.add_collection(colSillasD, autolim=False)
+#ax.add_collection(col, autolim=True)
+#ax.add_collection(colCriticas, autolim=True)
+#ax.add_collection(colSillas, autolim=False)
+#ax.add_collection(colSillasD, autolim=False)
 
 
 
