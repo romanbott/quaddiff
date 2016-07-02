@@ -67,8 +67,9 @@ class QuadraticDifferential:
                 
 
     def compute_trajectory(self, p):
-        t=Trajectory(self, p)
-        e=t()
+        ts=TrajectorySolver(self, p)
+        e=ts()
+        t=Trajectory(ts)
         return t
 
     def QD(self, z):
@@ -165,10 +166,22 @@ class Monodromy:
 
 
 class Trajectory:
+
+    def __init__(self, traj):
+        self._phase = traj._phase
+        self.plotpoint = traj.plotpoint
+        self.first = traj.first
+        self.last = traj.last
+        self.first_mon = traj.first_mon
+        self.last_mon = traj.last_mon
+        self.coordinates = traj.coordinates
+
+
+class TrajectorySolver:
     """clase que representa una trayectoria y los metodos para calcularla"""
 
     def __init__(self, quad, plotpoint, phase = None):
-        self._qd = quad
+        self.qd = quad
         if phase: self._phase = phase
         else: self._phase = quad.phase
         self.plotpoint = plotpoint
@@ -195,10 +208,10 @@ class Trajectory:
         ultimo = z
         start = z
         F = lambda y,t,mono: [sign*self.f(y,t,mono)[0],sign*self.f(y,t,mono)[1]]
-        while (self._qd.close_2pole(fin) and self._qd.close_2smplpole(fin) and norma < lim and rep < maxreps):
+        while (self.qd.close_2pole(fin) and self.qd.close_2smplpole(fin) and norma < lim and rep < maxreps):
             sol = odeint(F, [inicio.real, inicio.imag], t, mxstep = maxint, args=(mon,))
             fin = complex(sol[-1,0], sol[-1,1])
-            mon(self._qd(fin).conjugate())
+            mon(self.qd(fin).conjugate())
             if densidadPuntos < abs(fin-ultimo):
                 coord = np.append(coord, np.array([[fin.real, fin.imag]]), axis = 0)
                 ultimo = fin
@@ -222,7 +235,7 @@ class Trajectory:
     def f(self, y, t, mono):
         x = y[0]
         y = y[1]
-        z = mono.dist(self._qd(complex(x,y)).conjugate())
+        z = mono.dist(self.qd(complex(x,y)).conjugate())
         z *= normav
         if abs(complex(x, y)) > 1:
             z *= abs(complex(x,y))

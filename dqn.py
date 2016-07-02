@@ -8,7 +8,7 @@ from multiprocessing import Pool
 from itertools import combinations
 from intFormas import intfdz, intfdzCurve
 from obj import QuadraticDifferential, Monodromy, faseSillaD, Trajectory
-import cPickle as pickle
+import dill as pickle
 
 
 def save_object(obj, filename):
@@ -48,7 +48,7 @@ class QuadraticDrawer:
         all_trajectories = self.quadratic_differential.trajectories
         for (x,phase) in all_trajectories:
             if phase == self.quadratic_differential.phase:
-                t.append(all_trajectories[(x,phase)]())
+                t.append(all_trajectories[(x,phase)].coordinates)
         self.trajectories.set_segments(t)
 
 
