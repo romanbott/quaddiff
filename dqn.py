@@ -71,7 +71,7 @@ class QuadraticDrawer:
             print("+ Rotando fase: "+str(self.quadratic_differential.phase))
         if event.key == 'r':
             print('redibujando...')
-            self()
+            self.draw_trajectories()
         if event.key == 'R':
             print('redibujando criticas...')
             self.draw_critical()
@@ -85,6 +85,7 @@ class QuadraticDrawer:
         if event.key == 'c': self.point_type = 'c'
         if event.key == 'p': self.point_type = 'p'
         if event.key == 'u': self.point_type = 'u'
+        self()
 
     def click(self, event):
         if event.button == 1:

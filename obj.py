@@ -64,6 +64,7 @@ class QuadraticDifferential:
         for p in self.plotpoints:
             if (p, self.phase) not in self.trajectories:
                 self.trajectories[(p, self.phase)] = result[p].get()
+        print('')
                 
 
     def compute_trajectory(self, p):
