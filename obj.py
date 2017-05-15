@@ -23,6 +23,8 @@ class QuadraticDifferential:
 
     def __call__(self, z):
         result = self.phase
+        if x in self.zeros:
+            return 0.0
         for x in self.zeros:
             result = result*(z-x)/abs(z-x)
         for x in self.dblpoles:
