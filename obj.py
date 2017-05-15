@@ -81,8 +81,6 @@ class QuadraticDifferential:
 		result = result*(z-x)**-2
 	for x in self.smplpoles:
 		result = result*(z-x)**-1
-        if abs(result) > 10**4:
-            print("mierda")
 	return result
 
     def qd_not(self, z):
