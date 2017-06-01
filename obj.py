@@ -248,7 +248,7 @@ lim = 30
 maxreps = 50000
 maxint = 100
 t= np.linspace(0,.5,2) #intervalo temporal
-densidadPuntos=0.05
+densidadPuntos=0.01
 normav = 0.001
 
 
