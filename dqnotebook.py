@@ -24,7 +24,7 @@ def load_object(filename):
     return obj
 
 class QuadraticDrawer:
-    def __init__(self, quad, figure):
+    def __init__(self, quad, figure, ancho=0.2):
         self.figure = figure
         self.point_type = 'c'
         self.quadratic_differential = None
@@ -32,7 +32,7 @@ class QuadraticDrawer:
         self.cid_click = None
         self.set_quad(quad)
         self.ax = figure.add_subplot(111, xlim=(-3,3), ylim=(-3,3), autoscale_on=False)
-        self.trajectories = LineCollection([],offsets=offs,color='k',linewidths=anchoLineas,antialiaseds=True)
+        self.trajectories = LineCollection([],offsets=offs,color='k',linewidths=ancho,antialiaseds=True)
         self.ax.add_collection(self.trajectories)
 
     def __call__(self):
