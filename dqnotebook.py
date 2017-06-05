@@ -7,7 +7,7 @@ from cmath import *
 from multiprocessing import Pool
 from itertools import combinations
 from intFormas import intfdz, intfdzCurve
-from obj import QuadraticDifferential, Monodromy, faseSillaD, Trajectory
+from obj import QuadraticDifferential, Monodromy, Trajectory
 import dill as pickle
 from matplotlib.collections import LineCollection
 
@@ -24,7 +24,7 @@ def load_object(filename):
     return obj
 
 class QuadraticDrawer:
-    def __init__(self, quad, figure, ancho=0.2):
+    def __init__(self, quad, figure, ancho=0.2, color_lineas='k'):
         self.figure = figure
         self.point_type = 'c'
         self.quadratic_differential = None
@@ -32,7 +32,7 @@ class QuadraticDrawer:
         self.cid_click = None
         self.set_quad(quad)
         self.ax = figure.add_subplot(111, xlim=(-3,3), ylim=(-3,3), autoscale_on=False)
-        self.trajectories = LineCollection([],offsets=offs,color='k',linewidths=ancho,antialiaseds=True)
+        self.trajectories = LineCollection([],offsets=offs,color=color_lineas,linewidths=ancho,antialiaseds=True)
         self.ax.add_collection(self.trajectories)
 
     def __call__(self):

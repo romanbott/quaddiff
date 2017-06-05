@@ -12,10 +12,15 @@ import sys
 class QuadraticDifferential:
     """Esta clase codifica una diferencial cuadratica en el plano"""
 
-    def __init__(self):
-        self.zeros = []
-        self.dblpoles = []
-        self.smplpoles = []
+    def __init__(self, quad = None):
+        if quad:
+            self.zeros = quad.zeros
+            self.dblpoles = quad.dblpoles
+            self.smplpoles = quad.smplpoles
+        else:
+            self.zeros = []
+            self.dblpoles = []
+            self.smplpoles = []
         self.phase = complex(1,0) 
         self.saddles = []
         self.plotpoints = []
@@ -218,7 +223,7 @@ class TrajectorySolver:
                 ultimo = fin
             inicio = fin
             norma = abs(inicio)
-            if 50 < rep and 0.01 > abs(fin-start):
+            if 500 < rep and 0.01 > abs(fin-start):
                 break
             rep += 1
         return coord
@@ -245,40 +250,32 @@ class TrajectorySolver:
 
 
 lim = 30
-maxreps = 50000
-maxint = 100
-t= np.linspace(0,.5,2) #intervalo temporal
+maxreps = 500000
+maxint = 500
+t= np.linspace(0,.1,10) #intervalo temporal
 densidadPuntos=0.01
 normav = 0.001
+normav = 0.0002
 
 
-def faseSilla(z,w,quad):
-    f = lambda x: sqrt(quad.DQ(x))
-    faseSilla = intfdz(f,z,w)
-    return faseSilla/abs(faseSilla)
+def fase_silla(z,w,quad):
+    longitud_silla=integrar(z,w,quad)
+    fase_silla=longitud_silla/abs(longitud_silla)
+    fase_silla=fase_silla**2
+    return fase_silla.conjugate()
 
-def faseSillaD(z, w, divisiones, quad):
-    z, w = (w-z)*10**-3 +z, (z-w)*10**-3 +w
-    incremento = (w-z)/divisiones
-    quad.phase = 1
-    inicio = quad(z)
-    mon = Monodromy(inicio)
-    fin = z+incremento
-    if (-inicio.real) > abs(inicio.imag) and inicio.imag > 0:
-    	mon.patch1=1
-    if (-inicio.real) > abs(inicio.imag) and inicio.imag < 0:
-    	mon.patch2=1
-    inicio = z
-    faseSilla=0
-    for i in range(divisiones):
-        f = lambda x: dist(quad.DQ(x), mon.patch1, mon.patch2, mon.monodromia, mon.ma)
-        faseSilla += intfdz(f,inicio,fin)
-	mon(quad(fin))
-        inicio=fin
-        fin+=incremento 
-    return faseSilla
 
 ri=sqrt(1j)
 ric=sqrt(-1j)
 
-
+def integrar(x,y,quad, pasos=10**4):
+    paso = (y-x)/pasos
+    medio_paso = paso/2
+    mon=Monodromy(quad(x))
+    integral = 0
+    for i in range(pasos):
+        #integral += mon.dist(quad(x+medio_paso))*paso*sqrt(abs(quad.QD(x+medio_paso)))
+        integral += paso*(sqrt(abs(quad.QD(x)))*mon.dist(quad(x))   +  sqrt(abs(quad.QD(x+paso)))*mon.dist(quad(x+paso))     )/2
+        x+=paso
+        mon(quad(x))
+    return integral
