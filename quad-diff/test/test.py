@@ -88,14 +88,14 @@ class TrajectoryTests(unittest.TestCase):
         trajectory = self.trajectory.calculate()
 
         for point in trajectory:
-            self.assertEqual(point.imag, 0)
+            self.assertEqual(point[1], 0)
 
     def test_trivial_trajectory_calculation_2(self):
         """Trajectories of constant qudartical differntials"""
-        trajectory = self.trajectory.calculate(phase=1j)
+        trajectory = self.trajectory.calculate(phase=-1)
 
         for point in trajectory:
-            self.assertEqual(abs(point), 1)
+            self.assertEqual(point[0], 1)
 
 
 
