@@ -102,7 +102,7 @@ class TrajectoryTests(unittest.TestCase):
             self.assertEqual(point[1], 0)
 
     def test_trivial_trajectory_calculation_2(self):
-        trajectory = self.trajectory.calculate(phase=-1)
+        trajectory = self.trajectory.calculate(phase=-1.01)
 
         for point in trajectory:
             self.assertEqual(point[0], 1)
@@ -123,7 +123,7 @@ class TrajectoryTests(unittest.TestCase):
         first_close_2_boundary = constants.LIM - 0.5 <= abs(first) and \
             abs(first) <= constants.LIM + 0.5
         last_close_2_boundary = constants.LIM - 0.5 <= abs(last) and \
-            abs(first) <= constants.LIM + 0.5
+            abs(last) <= constants.LIM + 0.5
 
         self.assertTrue(first_close_2_boundary)
         self.assertTrue(last_close_2_boundary)
@@ -136,6 +136,59 @@ class TrajectoryTests(unittest.TestCase):
 
         for point in trajectory:
             self.assertEqual(round(point[0], 4), -round(point[1], 4))
+
+    def test_zdz_trajectory(self):
+        self.qd.phase = 1
+        self.qd.add_zero(0)
+        self.trajectory.point = 1
+
+        trajectory = self.trajectory.calculate()
+
+        last = complex(*trajectory[-1])
+        first = complex(*trajectory[0])
+        first_is_in_x_axis = round(first.imag,4) == 0.0
+        first_close_2_boundary = constants.LIM - 0.5 <= abs(first) and \
+            abs(first) <= constants.LIM + 1.0
+        self.assertTrue(first_close_2_boundary)
+        self.assertTrue(first_is_in_x_axis)
+
+    def test_z2dz_trajectory(self):
+        self.qd.phase = 1
+        self.qd.add_zero(0)
+        self.qd.add_zero(0)
+        self.trajectory.point = 1+0.001*1j
+
+        trajectory = self.trajectory.calculate()
+
+        last = complex(*trajectory[-1])
+        first = complex(*trajectory[0])
+        first_is_in_y_axis = round(first.real,2) == 0.0
+        first_close_2_boundary = constants.LIM - 0.5 <= abs(first) and \
+            abs(first) <= constants.LIM + 1.0
+        last_is_in_x_axis = round(last.imag,2) == 0.0
+        last_close_2_boundary = constants.LIM - 0.5 <= abs(last) and \
+            abs(last) <= constants.LIM + 0.5
+        self.assertTrue(first_close_2_boundary)
+        self.assertTrue(first_is_in_y_axis)
+        self.assertTrue(last_close_2_boundary)
+        self.assertTrue(last_is_in_x_axis)
+
+    def test_qdiff_with_dblpole_trajectory(self):
+        self.qd.phase = cm.rect(1,cm.pi/3) 
+        self.qd.zeros = []
+        self.qd.add_dblpole(0)
+
+        points = [cm.rect(1, coords[0]) for coords in np.random.random((10,2))]
+        for point in points:
+            self.trajectory.point = point
+            trajectory = self.trajectory.calculate()
+            last = complex(*trajectory[-1])
+            first = complex(*trajectory[0])
+            first_close_2_zero = abs(first) <= 0.1
+            last_close_2_zero = abs(first) <= 0.1
+            converges_2_zero = first_close_2_zero | last_close_2_zero
+            print(first, last)
+            self.assertTrue(converges_2_zero)
 
 
 
