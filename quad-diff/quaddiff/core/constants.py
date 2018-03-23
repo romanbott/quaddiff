@@ -1,3 +1,5 @@
+"""Default constants."""
+# Integration constants
 NUM_POINTS = 10000
 MAX_TIME = 1000
 VELOCITY_SCALE = 0.02

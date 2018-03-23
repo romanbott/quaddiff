@@ -24,7 +24,6 @@ class Trajectory(object):
         self.qd = quad
         self.point = point
 
-
     def calculate(self, phase=None):
         """Calculate trayectory."""
         if phase is None:
@@ -85,7 +84,7 @@ def calculate_ray(
         value *= sign
         return value.real, value.imag
 
-    ## Termination events
+    # Termination events
     def far_away(t, y):
         comp = complex(*y)
         if abs(comp) > lim:

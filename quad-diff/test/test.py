@@ -102,7 +102,6 @@ class TrajectoryTests(unittest.TestCase):
             self.assertEqual(point[1], 0)
 
     def test_trivial_trajectory_calculation_2(self):
-        """Trajectories of constant qudartical differntials"""
         trajectory = self.trajectory.calculate(phase=-1)
 
         for point in trajectory:
@@ -129,8 +128,7 @@ class TrajectoryTests(unittest.TestCase):
         self.assertTrue(first_close_2_boundary)
         self.assertTrue(last_close_2_boundary)
 
-    def test_quad_fase_trivial_trajectory(self):
-
+    def test_trivial_trajectory_phase_changed_from_quad(self):
         self.qd.phase = 1j
         self.trajectory.point = 0 + 0*1j
 
@@ -142,4 +140,4 @@ class TrajectoryTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(verbosity=2)
