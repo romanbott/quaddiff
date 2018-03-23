@@ -42,8 +42,20 @@ class Inf(object):
     def __repr__(self):
         return 'Infinity'
 
-
 INF = Inf()
+
+
+class MethodProxy(object):
+    def __init__(self, obj, method):
+        self.obj = obj
+        if isinstance(method, basestring):
+            self.methodName = method
+        else:
+            assert callable(method)
+            self.methodName = method.func_name
+    def __call__(self, *args, **kwargs):
+        return getattr(self.obj, self.methodName)(*args, **kwargs)
+
 
 # lim = 30
 # maxreps = 500000

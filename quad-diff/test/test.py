@@ -17,11 +17,8 @@ class QuadraticDifferentialTests(unittest.TestCase):
     def setUp(self):
         self.qd = qd.QuadraticDifferential()  # pylint: disable=invalid-name
 
-    # def test_empty_quaddiff(self):
-    #     self.assertRaises(ValueError, self.qd, 0)
-
     def test_non_empty_quaddiff(self):
-        self.qd.zeros.append(1)
+        self.qd.add_zero(1)
         self.assertEqual(-1, self.qd(0))
 
     def test_quaddiff_zeros(self):
@@ -30,15 +27,15 @@ class QuadraticDifferentialTests(unittest.TestCase):
             self.assertEqual(0, self.qd(zero))
 
     def test_poles(self):
-        self.qd.smplpoles.append(1)
+        self.qd.add_smplpole(1)
         self.assertEqual(self.qd(1), qd.INF)
 
-        self.qd.dblpoles.append(2)
+        self.qd.add_dblpole(2)
         self.assertEqual(self.qd(2), qd.INF)
 
     def test_proximity(self):
-        self.qd.smplpoles.append(1)
-        self.qd.dblpoles.append(-1)
+        self.qd.add_smplpole(1)
+        self.qd.add_dblpole(-1)
         self.assertFalse(self.qd.close_2pole(2))
         self.assertTrue(self.qd.close_2pole(1.001))
         self.assertTrue(self.qd.close_2pole(-1.001))
@@ -46,7 +43,7 @@ class QuadraticDifferentialTests(unittest.TestCase):
         self.assertTrue(self.qd.close_2pole(1))
 
     def test_phase_change(self):
-        self.qd.zeros.append(1)
+        self.qd.add_zero(1)
         first = self.qd(1 + 1j)
 
         self.qd.phase = 1j
@@ -54,6 +51,34 @@ class QuadraticDifferentialTests(unittest.TestCase):
 
         self.assertNotEqual(first, second)
         self.assertEqual(1j*first, second)
+
+    def test_save_and_load(self):
+        self.qd.add_zero(1)
+        self.qd.add_zero(0)
+        self.qd.add_zero(-1j)
+
+        self.qd.add_smplpole(1+1j)
+        self.qd.add_smplpole(-2 + 1j)
+        self.qd.add_smplpole(3j)
+        self.qd.add_smplpole(2 - 1j)
+
+        self.qd.add_dblpole(2)
+        self.qd.add_dblpole(3 + 0.5j)
+
+        self.qd.phase = cm.exp(.45 * cm.pi * 2j)
+
+        qd_repr = str(self.qd)
+
+        name = 'test_quad'
+        self.qd.save('/tmp', name=name)
+
+        reconstructed = qd.QuadraticDifferential.from_file('/tmp', name=name)
+        reconstructed_repr = str(reconstructed)
+
+        self.assertEqual(qd_repr, reconstructed_repr)
+        os.remove(os.path.join('/tmp', name + '.json'))
+
+
 
 
 class MonodromyTests(unittest.TestCase):
@@ -75,47 +100,35 @@ class MonodromyTests(unittest.TestCase):
 
         self.assertNotEqual(dist1, dist2)
 
-    # def test_retrace_trajectory(self):
-    #     point = 1 + 1j
-    #     dist1 = self.mono.dist(point)
-
-    #     trajectory = [cm.exp(t*cm.pi*2j) for t in np.linspace(0, 2, 1000)]
-    #     for point in trajectory:
-    #         self.mono.update(point)
-
-    #     dist2 = self.mono.dist(point)
-
-    #     self.assertEqual(dist1, dist2)
-
 
 class TrajectoryTests(unittest.TestCase):
     def setUp(self):
         self.qd = qd.QuadraticDifferential()
 
-        initial_point = 1 + 0j
-        self.trajectory = qd.Trajectory(self.qd, initial_point)
+        self.point = 1 + 0j
+        self.trajectory = qd.TrajectorySolver(self.qd)
 
     def test_trivial_trajectory_calculation_1(self):
-        trajectory = self.trajectory.calculate()
+        trajectory = self.trajectory.calculate(self.point)
 
         for point in trajectory:
             self.assertEqual(point[1], 0)
 
     def test_trivial_trajectory_calculation_2(self):
-        trajectory = self.trajectory.calculate(phase=-1)
+        trajectory = self.trajectory.calculate(self.point, phase=-1)
 
         for point in trajectory:
             self.assertEqual(point[0], 1)
 
     def test_trivial_trajectory_calculation_3(self):
-        self.trajectory.point = 0 + 0*1j
-        trajectory = self.trajectory.calculate(phase=1j)
+        point = 0 + 0*1j
+        trajectory = self.trajectory.calculate(point, phase=1j)
 
         for point in trajectory:
             self.assertEqual(round(point[0], 4), -round(point[1], 4))
 
     def test_boundary_condition(self):
-        trajectory = self.trajectory.calculate()
+        trajectory = self.trajectory.calculate(self.point)
 
         last = complex(*trajectory[-1])
         first = complex(*trajectory[0])
@@ -128,16 +141,76 @@ class TrajectoryTests(unittest.TestCase):
         self.assertTrue(first_close_2_boundary)
         self.assertTrue(last_close_2_boundary)
 
-    def test_trivial_trajectory_phase_changed_from_quad(self):
-        self.qd.phase = 1j
-        self.trajectory.point = 0 + 0*1j
 
-        trajectory = self.trajectory.calculate()
+class BasePlotterTests(unittest.TestCase):
+    def setUp(self):
+        self.qd = qd.QuadraticDifferential()
+        self.plot = qd.BasePlotter(self.qd)
 
-        for point in trajectory:
-            self.assertEqual(round(point[0], 4), -round(point[1], 4))
+    @unittest.skip("")
+    def test_plot_point_empty_quad(self):
+        self.plot.add_plotpoint(1)
+        self.plot.compute_trajectories()
 
+        number_of_phases = len(self.plot.phases)
+        number_of_trajectories = len(self.plot.trajectories.keys())
+        self.assertEqual(number_of_phases, number_of_trajectories)
 
+    @unittest.skip("")
+    def test_plot_point_1pole_quad(self):
+        self.qd.add_smplpole(0)
+        self.plot.add_plotpoint(1)
+        self.plot.compute_trajectories()
+
+        number_of_phases = len(self.plot.phases)
+        number_of_trajectories = len(self.plot.trajectories.keys())
+        self.assertEqual(number_of_phases, number_of_trajectories)
+
+    @unittest.skip("")
+    def test_change_in_quad_reflected_in_plotter(self):
+        self.qd.add_smplpole(0)
+        self.qd.add_dblpole(1j)
+
+        qd_repr = str(self.qd)
+        qd_plotter_repr = str(self.plot.qd)
+
+        self.assertEqual(qd_repr, qd_plotter_repr)
+
+    @unittest.skip("")
+    def test_plot_4points_4smplpoles(self):
+        self.qd.add_smplpole(0)
+        self.qd.add_smplpole(1 + 1j)
+        self.qd.add_smplpole(2 - 1j)
+        self.qd.add_smplpole(3j)
+
+        self.plot.add_plotpoint(1)
+        self.plot.add_plotpoint(-1)
+        self.plot.add_plotpoint(1j)
+        self.plot.add_plotpoint(-1j)
+        self.plot.compute_trajectories()
+
+        number_of_phases = len(self.plot.phases)
+        number_of_trajectories = len(self.plot.trajectories.keys())
+        self.assertEqual(number_of_phases * 4, number_of_trajectories)
+
+    def test_save_and_load_trajectories(self):
+        self.qd.add_smplpole(0)
+        self.qd.add_smplpole(1 + 1j)
+        self.qd.add_smplpole(2 - 1j)
+        self.qd.add_smplpole(3j)
+
+        self.plot.add_plotpoint(1)
+        self.plot.add_plotpoint(1j)
+        self.plot.add_plotpoint(-1j)
+        self.plot.compute_trajectories()
+
+        prev_trajectories = self.plot.trajectories
+
+        name = 'test_quad'
+        self.plot.save_trajectories('/tmp', name=name)
+        loaded_trajectories = self.plot.from_file('/tmp', name=name)
+
+        self.assertEqual(prev_trajectories, loaded_trajectories)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)

@@ -9,7 +9,7 @@ from .monodromy import Monodromy
 from .constants import *
 
 
-class Trajectory(object):
+class TrajectorySolver(object):
     """clase que representa una trayectoria y los metodos para calcularla."""
 
     parameters = {
@@ -20,26 +20,28 @@ class Trajectory(object):
         'lim': LIM,
         'max_step': MAX_STEP}
 
-    def __init__(self, quad, point, phase=None):
+    def __init__(self, quad):
         self.qd = quad
-        self.point = point
 
-    def calculate(self, phase=None):
+    def calculate(self, point, phase=None):
         """Calculate trayectory."""
         if phase is None:
             phase = self.qd.phase
 
         positive_trajectory = calculate_ray(
-            self.point, self.qd, parameters=self.parameters, phase=phase)
+            point, self.qd, parameters=self.parameters, phase=phase)
         negative_trajectory = calculate_ray(
-            self.point, self.qd, sign=-1, parameters=self.parameters, phase=phase)
+            point, self.qd, sign=-1, parameters=self.parameters, phase=phase)
 
         trajectory = np.concatenate(
             [negative_trajectory.T[::-1],
-            [[self.point.real, self.point.imag]],
-            positive_trajectory.T])
+             positive_trajectory.T])
 
         return trajectory
+
+    def _calculate(self, arg):
+        point, phase = arg
+        return self.calculate(point, phase=phase)
 
 
 def calculate_ray(
