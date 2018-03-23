@@ -10,6 +10,7 @@ sys.path.insert(
     0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import quaddiff as qd  # pylint: disable=wrong-import-position
+import quaddiff.core.constants as constants
 
 
 class QuadraticDifferentialTests(unittest.TestCase):
@@ -43,6 +44,16 @@ class QuadraticDifferentialTests(unittest.TestCase):
         self.assertTrue(self.qd.close_2pole(-1.001))
         self.qd.sensitivity = 1
         self.assertTrue(self.qd.close_2pole(1))
+
+    def test_phase_change(self):
+        self.qd.zeros.append(1)
+        first = self.qd(1 + 1j)
+
+        self.qd.phase = 1j
+        second = self.qd(1 + 1j)
+
+        self.assertNotEqual(first, second)
+        self.assertEqual(1j*first, second)
 
 
 class MonodromyTests(unittest.TestCase):
@@ -96,6 +107,37 @@ class TrajectoryTests(unittest.TestCase):
 
         for point in trajectory:
             self.assertEqual(point[0], 1)
+
+    def test_trivial_trajectory_calculation_3(self):
+        self.trajectory.point = 0 + 0*1j
+        trajectory = self.trajectory.calculate(phase=1j)
+
+        for point in trajectory:
+            self.assertEqual(round(point[0], 4), -round(point[1], 4))
+
+    def test_boundary_condition(self):
+        trajectory = self.trajectory.calculate()
+
+        last = complex(*trajectory[-1])
+        first = complex(*trajectory[0])
+
+        first_close_2_boundary = constants.LIM - 0.5 <= abs(first) and \
+            abs(first) <= constants.LIM + 0.5
+        last_close_2_boundary = constants.LIM - 0.5 <= abs(last) and \
+            abs(first) <= constants.LIM + 0.5
+
+        self.assertTrue(first_close_2_boundary)
+        self.assertTrue(last_close_2_boundary)
+
+    def test_quad_fase_trivial_trajectory(self):
+
+        self.qd.phase = 1j
+        self.trajectory.point = 0 + 0*1j
+
+        trajectory = self.trajectory.calculate()
+
+        for point in trajectory:
+            self.assertEqual(round(point[0], 4), -round(point[1], 4))
 
 
 

@@ -9,7 +9,7 @@ class QuadraticDifferential(object):
     """Esta clase codifica una diferencial cuadratica en el plano"""
     sensitivity = 1e-2
 
-    def __init__(self, quad=None):
+    def __init__(self, quad=None, phase=None):
         if quad:
             self.zeros = quad.zeros
             self.dblpoles = quad.dblpoles
@@ -18,7 +18,7 @@ class QuadraticDifferential(object):
             self.zeros = []
             self.dblpoles = []
             self.smplpoles = []
-        self.phase = complex(1, 0)
+        self.phase = complex(1, 0) if phase is None else phase
         self.saddles = []
 
     def __repr__(self):
