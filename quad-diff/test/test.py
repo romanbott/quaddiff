@@ -373,5 +373,52 @@ class BasePlotterTests(unittest.TestCase):
 
         self.assertEqual(prev_trajectories, loaded_trajectories)
 
+
+
+
+
+class NewTrajectoryTests(unittest.TestCase):
+    def setUp(self):
+        self.qd = qd.QuadraticDifferential()
+
+        self.point = 1 + 0j
+        self.trajectory = qd.TrajectorySolver(self.qd)
+
+    def test_qdiff_with_dblpole_trajectory(self):
+        self.qd.phase = cm.rect(1, cm.pi) 
+        self.qd.zeros = []
+        self.qd.add_dblpole(0)
+
+        points = [cm.rect(1, phase) for phase in np.random.random((5, 1))]
+        for point in points:
+            trajectory = self.trajectory.calculate(point, phase = cm.rect(1, 0.99*cm.pi) )
+            last = complex(trajectory[-1])
+            first = complex(trajectory[0])
+            first_close_2_zero = abs(first) <= 0.15
+            last_close_2_zero = abs(last) <= 0.15
+            first_close_2_infty = abs(first) >= 29.15
+            last_close_2_infty = abs(last) >= 29.15
+            converges_2_zero = first_close_2_zero | last_close_2_zero
+            converges_2_infty = first_close_2_infty | last_close_2_infty
+            self.assertTrue(converges_2_zero)
+            self.assertTrue(converges_2_infty)
+
+    def test_qdiff_with_dblpole_closed(self):
+        self.qd.phase = cm.rect(1, cm.pi) 
+        self.qd.zeros = []
+        self.qd.add_dblpole(0)
+
+        points = [cm.rect(norm, phase) for phase, norm in np.random.random((50, 2))]
+        for point in points:
+            trajectory = self.trajectory.calculate(point, phase = cm.rect(1, cm.pi) )
+            last = complex(trajectory[-1])
+            first = complex(trajectory[0])
+            first_close_2_start = abs(first-point) <= 0.15
+            last_close_2_start = abs(last-point) <= 0.15
+            is_closed_loop = first_close_2_start | last_close_2_start
+            self.assertTrue(is_closed_loop)
+
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)
