@@ -1,7 +1,7 @@
 """Quadratic differential package for Python."""
 from .core.quaddiff import QuadraticDifferential
 from .core.monodromy import Monodromy
-from .core.trajectory import TrajectorySolver
+from .core.old_trajectory import Trajectory
 from .plot.baseplotter import BasePlotter
 from .plot import *
 from .utils import INF
