@@ -5,7 +5,7 @@ import numpy as np
 from cmath import *
 from scipy.integrate import solve_ivp
 
-from .monodromy import Monodromy
+from .obj import Monodromy
 from .constants import *
 
 

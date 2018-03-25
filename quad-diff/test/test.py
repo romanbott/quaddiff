@@ -11,7 +11,7 @@ sys.path.insert(
 
 import quaddiff as qd  # pylint: disable=wrong-import-position
 import quaddiff.core.constants as constants
-
+from quaddiff.core.obj import Monodromy
 
 class QuadraticDifferentialTests(unittest.TestCase):
     def setUp(self):
@@ -83,22 +83,53 @@ class QuadraticDifferentialTests(unittest.TestCase):
 
 class MonodromyTests(unittest.TestCase):
     def setUp(self):
-        self.mono = qd.Monodromy(1+0*1j)
+        self.mono = Monodromy(1+0*1j)
 
     def test_trivial_dist(self):
         self.assertEqual(self.mono.dist(1), 1)
 
     def test_monodromy_change(self):
-        point = 1 + 1j
+        point = cm.rect(1,0.1)
         dist1 = self.mono.dist(point)
 
-        trajectory = [cm.exp(t*cm.pi*2j) for t in np.linspace(0, 1, 10)]
+        trajectory = [cm.exp(t*cm.pi*2j) for t in np.linspace(0.1, 1.05, 10)]
         for point in trajectory:
             self.mono.update(point)
 
         dist2 = self.mono.dist(point)
 
         self.assertNotEqual(dist1, dist2)
+
+    def test_monodromy_return(self):
+        point = cm.rect(1,0.2)
+        dist1 = self.mono.dist(point)
+
+        trajectory = [cm.exp(t*cm.pi*1j) for t in np.linspace(0.1, 4.1, 100)]
+        for point in trajectory:
+            self.mono.update(point)
+
+        point = cm.rect(1,0.2)
+        dist2 = self.mono.dist(point)
+
+        self.assertEqual(dist1, dist2)
+
+    def test_monodromy_continuous(self):
+        point = cm.rect(1,0.2)
+        dist_old = self.mono.dist(point)
+
+        trajectory = [cm.exp(t*cm.pi*1j) for t in np.linspace(0.1, 8.1, 500)]
+
+        is_close = True
+        for point in trajectory:
+            self.mono.update(point)
+            dist = self.mono.dist(point)
+            is_close = is_close and abs(dist-dist_old) < 0.2
+            #print(abs(dist-dist_old))
+            dist_old = dist
+
+        self.assertTrue(is_close)
+
+        
 
 
 class TrajectoryTests(unittest.TestCase):
@@ -175,21 +206,38 @@ class TrajectoryTests(unittest.TestCase):
         self.assertTrue(last_close_2_boundary)
         self.assertTrue(last_is_in_x_axis)
 
+    @unittest.skip("")
     def test_qdiff_with_dblpole_trajectory(self):
         self.qd.phase = cm.rect(1, cm.pi/3) 
         self.qd.zeros = []
         self.qd.add_dblpole(0)
 
-        points = [cm.rect(1, coords[0]) for coords in np.random.random((10, 2))]
+        points = [cm.rect(1, phase) for phase in np.random.random((1000, 1))]
         for point in points:
             trajectory = self.trajectory.calculate(point)
             last = complex(*trajectory[-1])
             first = complex(*trajectory[0])
             first_close_2_zero = abs(first) <= 0.1
-            last_close_2_zero = abs(first) <= 0.1
+            last_close_2_zero = abs(last) <= 0.1
+            print(first, last, point)
             converges_2_zero = first_close_2_zero | last_close_2_zero
             self.assertTrue(converges_2_zero)
 
+    def test_problematic_trajectory(self):
+        self.qd.phase = cm.rect(1, cm.pi/3) 
+        self.qd.zeros = []
+        self.qd.add_dblpole(0)
+
+        points = [0.6634486760787831+0.748221794797044j]
+        for point in points:
+            trajectory = self.trajectory.calculate(point)
+            last = complex(*trajectory[-1])
+            first = complex(*trajectory[0])
+            first_close_2_zero = abs(first) <= 0.1
+            last_close_2_zero = abs(last) <= 0.1
+            print(first, last, point)
+            converges_2_zero = first_close_2_zero | last_close_2_zero
+            self.assertTrue(converges_2_zero)
 
 class BasePlotterTests(unittest.TestCase):
     def setUp(self):
