@@ -15,7 +15,6 @@ class TrajectorySolver(object):
     parameters = {
         'max_time': MAX_TIME,
         'velocity_scale': VELOCITY_SCALE,
-        'max_int': MAX_INT,
         'num_points': NUM_POINTS,
         'lim': LIM,
         'max_step': MAX_STEP}
@@ -33,9 +32,7 @@ class TrajectorySolver(object):
         negative_trajectory = calculate_ray(
             point, self.qd, sign=-1, parameters=self.parameters, phase=phase)
 
-        trajectory = np.concatenate(
-            [negative_trajectory.T[::-1],
-             positive_trajectory.T])
+        trajectory = list(reversed(negative_trajectory)) + positive_trajectory[1:]
 
         return trajectory
 
@@ -53,7 +50,6 @@ def calculate_ray(
     """Calculate a ray solution to the Quadratic Differential."""
     max_time = parameters.get('max_time', MAX_TIME)
     num_points = parameters.get('num_points', NUM_POINTS)
-    max_int = parameters.get('max_int', MAX_INT)
     max_step = parameters.get('max_step', MAX_STEP)
     velocity_scale = parameters.get('velocity_scale', VELOCITY_SCALE)
     lim = parameters.get('lim', LIM)
@@ -102,14 +98,22 @@ def calculate_ray(
             return 1
     close_2pole.terminal = True
 
+    def close_2start(t, y):
+        comp = complex(*y)
+        if (abs(comp - starting_point) <= 1e-2) and t > 100:
+            return 0
+        else:
+            return 1
+    close_2start.terminal = True
+
     # Calculate solution with solve_ivp
     # time_axis = np.linspace(0, max_time, num_points)
     solution = solve_ivp(
         vector_field,
         (0, max_time),
         np.array([initial.real, initial.imag]),
-        events=[far_away, close_2pole],
+        events=[far_away, close_2pole, close_2start],
         max_step=max_step)
 
-
-    return solution['y']
+    solution_complex_list = [complex(*point) for point in solution['y'].T]
+    return solution_complex_list

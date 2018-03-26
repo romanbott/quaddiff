@@ -19,7 +19,7 @@ class BasePlotterTests(unittest.TestCase):
     # @unittest.skip("")
     def test_plot_point_empty_quad(self):
         self.plot.add_plotpoint(1)
-        self.plot.compute_trajectories()
+        self.plot.calculate_trajectories()
 
         number_of_phases = len(self.plot.phases)
         number_of_trajectories = len(self.plot.trajectories.keys())
@@ -29,7 +29,7 @@ class BasePlotterTests(unittest.TestCase):
     def test_plot_point_1pole_quad(self):
         self.qd.add_smplpole(0)
         self.plot.add_plotpoint(1)
-        self.plot.compute_trajectories()
+        self.plot.calculate_trajectories()
 
         number_of_phases = len(self.plot.phases)
         number_of_trajectories = len(self.plot.trajectories.keys())
@@ -56,7 +56,7 @@ class BasePlotterTests(unittest.TestCase):
         self.plot.add_plotpoint(-1)
         self.plot.add_plotpoint(1j)
         self.plot.add_plotpoint(-1j)
-        self.plot.compute_trajectories()
+        self.plot.calculate_trajectories()
 
         number_of_phases = len(self.plot.phases)
         number_of_trajectories = len(self.plot.trajectories.keys())
@@ -72,7 +72,7 @@ class BasePlotterTests(unittest.TestCase):
         self.plot.add_plotpoint(1)
         self.plot.add_plotpoint(1j)
         self.plot.add_plotpoint(-1j)
-        self.plot.compute_trajectories()
+        self.plot.calculate_trajectories()
 
         prev_trajectories = self.plot.trajectories
 

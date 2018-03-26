@@ -12,6 +12,7 @@ sys.path.insert(
 import quaddiff as qd  # pylint: disable=wrong-import-position
 import quaddiff.core.constants as constants
 
+
 class QuadraticDifferentialTests(unittest.TestCase):
     def setUp(self):
         self.qd = qd.QuadraticDifferential()  # pylint: disable=invalid-name
@@ -77,6 +78,7 @@ class QuadraticDifferentialTests(unittest.TestCase):
         self.assertEqual(qd_repr, reconstructed_repr)
         os.remove(os.path.join('/tmp', name + '.json'))
 
+
 class MonodromyTests(unittest.TestCase):
     def setUp(self):
         self.mono = qd.Monodromy(1+0*1j)
@@ -109,7 +111,7 @@ class MonodromyTests(unittest.TestCase):
         self.assertEqual(dist1, dist2)
 
     def test_monodromy_continuous(self):
-        point =  1 + 0 * 1j
+        point = 1 + 0 * 1j
         dist_old = self.mono(point)
 
         trajectory = [cm.exp(t*cm.pi*1j) for t in np.linspace(0, 8, 500)]
@@ -153,10 +155,11 @@ class MonodromyTests(unittest.TestCase):
                 real = np.random.normal(scale=0.05)
                 real = min(real, 3.1)
                 imag += np.random.normal(scale=0.15)
-                point = cm.exp(complex(real,imag))
+                point = cm.exp(complex(real, imag))
                 dist = self.mono(point)
                 is_close = is_close and abs(dist-dist_old) < 0.5
-                if abs(dist-dist_old) > 0.5: print(abs(dist-dist_old), point)
+                if abs(dist-dist_old) > 0.5:
+                    print(abs(dist-dist_old), point)
                 dist_old = dist
 
         self.assertTrue(is_close)

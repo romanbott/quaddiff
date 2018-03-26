@@ -40,7 +40,7 @@ class BasePlotter(object):
         self.trajectories = {}
         self.saddles = []
 
-    def compute_trajectories(self):
+    def calculate_trajectories(self):
         arguments = [(point, phase)
                      for point in self.plotpoints
                      for phase in self.phases
@@ -60,6 +60,8 @@ class BasePlotter(object):
 
         logging.info('done.')
 
+    def get_trayectories(phase=None, plotpoint=None):
+
     def save_trajectories(self, path, name='quad_diff'):
         def pkey(key):
             point = (key[0].real, key[0].imag)
@@ -67,7 +69,7 @@ class BasePlotter(object):
             return str((point, phase))
         # Save trajectories
         jsonable_trajectories = {
-            pkey(key): value.tolist()
+            pkey(key): [[x.real, x.imag] for x in value]
             for key, value in self.trajectories.iteritems()
         }
 
@@ -89,7 +91,7 @@ class BasePlotter(object):
             return point, phase
 
         parsed_trajectories = {
-            pkey(key): np.array(value)
+            pkey(key): [complex(*x) for x in value]
             for key, value in trajectories.iteritems()
         }
 
