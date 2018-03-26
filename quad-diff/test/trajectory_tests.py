@@ -5,6 +5,7 @@ import sys
 import time
 import cmath as cm
 import numpy as np
+import logging
 sys.path.insert(
     0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -14,7 +15,6 @@ import quaddiff.core.constants as constants
 class TrajectoryTests(unittest.TestCase):
     def setUp(self):
         self.qd = qd.QuadraticDifferential()
-
         self.point = 1 + 0j
         self.trajectory = qd.TrajectorySolver(self.qd)
 
@@ -88,42 +88,26 @@ class TrajectoryTests(unittest.TestCase):
         self.assertTrue(last_close_2_boundary)
         self.assertTrue(last_is_in_x_axis)
 
-    #@unittest.skip("")
-    def test_qdiff_with_dblpole_trajectory(self):
-        self.qd.phase = cm.rect(1, cm.pi) 
-        self.qd.zeros = []
-        self.qd.add_dblpole(0)
-
-        points = [cm.rect(1, phase) for phase in np.random.random((5, 1))]
-        for point in points:
-            trajectory = self.trajectory.calculate(point, phase = cm.rect(1, 0.99*cm.pi) )
-            last = trajectory[-1]
-            first = trajectory[0]
-            first_close_2_zero = abs(first) <= 0.15
-            last_close_2_zero = abs(last) <= 0.15
-            first_close_2_infty = abs(first) >= 29.15
-            last_close_2_infty = abs(last) >= 29.15
-            converges_2_zero = first_close_2_zero | last_close_2_zero
-            converges_2_infty = first_close_2_infty | last_close_2_infty
-            self.assertTrue(converges_2_zero)
-            self.assertTrue(converges_2_infty)
-
-
+    # @unittest.skip("")
     def test_qdiff_with_dblpole_closed(self):
-        self.qd.phase = cm.rect(1, cm.pi) 
+        self.qd.phase = -1
         self.qd.zeros = []
         self.qd.add_dblpole(0)
 
-        points = [cm.rect(norm, phase) for phase, norm in np.random.random((50, 2))]
+        points = [
+            cm.rect(norm, phase) 
+            for phase, norm in np.random.uniform(.1, 4, size=(2, 2))]
+
         for point in points:
-            trajectory = self.trajectory.calculate(point, phase = cm.rect(1, cm.pi) )
-            last = trajectory[-1]
-            first = trajectory[0]
-            first_close_2_start = abs(first-point) <= 0.15
-            last_close_2_start = abs(last-point) <= 0.15
-            is_closed_loop = first_close_2_start | last_close_2_start
+            trajectory = self.trajectory.calculate(point, phase=-1)
+            is_closed_loop = np.std(np.abs(trajectory)) <= 0.15
             self.assertTrue(is_closed_loop)
 
+            start = trajectory[0]
+            final = trajectory[-1]
+
+            close = abs(start - final) <= 0.1
+            self.assertTrue(close)
 
     def test_problematic_trajectory(self):
         self.qd.phase = cm.rect(1, cm.pi/3) 
@@ -141,39 +125,25 @@ class TrajectoryTests(unittest.TestCase):
             self.assertTrue(converges_2_zero)
 
     def test_qdiff_with_dblpole_trajectory(self):
-        self.qd.phase = cm.rect(1, cm.pi) 
+        self.qd.phase = cm.rect(1, 0.99 * cm.pi)
         self.qd.zeros = []
         self.qd.add_dblpole(0)
 
-        points = [cm.rect(1, phase) for phase in np.random.random((5, 1))]
+        points = [cm.rect(1, phase) for phase in np.random.random((2, 1))]
         for point in points:
-            trajectory = self.trajectory.calculate(point, phase = cm.rect(1, 0.99*cm.pi) )
+            trajectory = self.trajectory.calculate(point)
             last = trajectory[-1]
             first = trajectory[0]
             first_close_2_zero = abs(first) <= 0.15
             last_close_2_zero = abs(last) <= 0.15
-            first_close_2_infty = abs(first) >= 29.15
-            last_close_2_infty = abs(last) >= 29.15
+            first_close_2_infty = abs(first) >= 27
+            last_close_2_infty = abs(last) >= 27
             converges_2_zero = first_close_2_zero | last_close_2_zero
             converges_2_infty = first_close_2_infty | last_close_2_infty
             self.assertTrue(converges_2_zero)
             self.assertTrue(converges_2_infty)
 
-    def test_qdiff_with_dblpole_closed(self):
-        self.qd.phase = cm.rect(1, cm.pi) 
-        self.qd.zeros = []
-        self.qd.add_dblpole(0)
-
-        points = [cm.rect(norm, phase) for phase, norm in np.random.random((50, 2))]
-        for point in points:
-            trajectory = self.trajectory.calculate(point, phase = cm.rect(1, cm.pi) )
-            last = trajectory[-1]
-            first = trajectory[0]
-            first_close_2_start = abs(first-point) <= 0.15
-            last_close_2_start = abs(last-point) <= 0.15
-            is_closed_loop = first_close_2_start | last_close_2_start
-            self.assertTrue(is_closed_loop)
-
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.WARNING)
     unittest.main(verbosity=2)

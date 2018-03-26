@@ -16,7 +16,7 @@ class BasePlotterTests(unittest.TestCase):
         self.qd = qd.QuadraticDifferential()
         self.plot = qd.BasePlotter(self.qd)
 
-    @unittest.skip("")
+    # @unittest.skip("")
     def test_plot_point_empty_quad(self):
         self.plot.add_plotpoint(1)
         self.plot.compute_trajectories()
@@ -25,7 +25,7 @@ class BasePlotterTests(unittest.TestCase):
         number_of_trajectories = len(self.plot.trajectories.keys())
         self.assertEqual(number_of_phases, number_of_trajectories)
 
-    @unittest.skip("")
+    # @unittest.skip("")
     def test_plot_point_1pole_quad(self):
         self.qd.add_smplpole(0)
         self.plot.add_plotpoint(1)
@@ -35,7 +35,7 @@ class BasePlotterTests(unittest.TestCase):
         number_of_trajectories = len(self.plot.trajectories.keys())
         self.assertEqual(number_of_phases, number_of_trajectories)
 
-    @unittest.skip("")
+    # @unittest.skip("")
     def test_change_in_quad_reflected_in_plotter(self):
         self.qd.add_smplpole(0)
         self.qd.add_dblpole(1j)
@@ -45,7 +45,7 @@ class BasePlotterTests(unittest.TestCase):
 
         self.assertEqual(qd_repr, qd_plotter_repr)
 
-    @unittest.skip("")
+    # @unittest.skip("")
     def test_plot_4points_4smplpoles(self):
         self.qd.add_smplpole(0)
         self.qd.add_smplpole(1 + 1j)
@@ -62,7 +62,7 @@ class BasePlotterTests(unittest.TestCase):
         number_of_trajectories = len(self.plot.trajectories.keys())
         self.assertEqual(number_of_phases * 4, number_of_trajectories)
 
-    @unittest.skip("")
+    # @unittest.skip("")
     def test_save_and_load_trajectories(self):
         self.qd.add_smplpole(0)
         self.qd.add_smplpole(1 + 1j)
