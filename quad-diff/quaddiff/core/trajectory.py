@@ -59,7 +59,7 @@ def calculate_ray(
     lim = parameters.get('lim', LIM)
 
     # Monodromy
-    monodromy = Monodromy(starting_point)
+    sqrt_monodromy = Monodromy(quad(starting_point))
 
     # Iteration counter
     iteration = 0
@@ -78,8 +78,7 @@ def calculate_ray(
     def vector_field(t, y):
         real, img = y
         comp = complex(real, img)
-        monodromy.update(quad(comp, phase=phase).conjugate())
-        value = monodromy.dist(quad(comp, phase=phase).conjugate())
+        value = sqrt_monodromy(quad(comp, phase=phase).conjugate())
         value *= velocity_scale
         if abs(comp) > 1:
             value *= abs(comp)

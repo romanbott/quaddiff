@@ -86,17 +86,17 @@ class MonodromyTests(unittest.TestCase):
         self.mono = qd.Monodromy(1+0*1j)
 
     def test_trivial_dist(self):
-        self.assertEqual(self.mono.dist(1), 1)
+        self.assertEqual(self.mono(1), 1)
 
     def test_monodromy_change(self):
         point = 1 + 1j
-        dist1 = self.mono.dist(point)
+        dist1 = self.mono(point)
 
         trajectory = [cm.exp(t*cm.pi*2j) for t in np.linspace(0, 1, 10)]
         for point in trajectory:
             self.mono.update(point)
 
-        dist2 = self.mono.dist(point)
+        dist2 = self.mono(point)
 
         self.assertNotEqual(dist1, dist2)
 
