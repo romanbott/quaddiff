@@ -4,13 +4,14 @@
 import os
 import json
 from cmath import *
+from constants import *
 
 from ..utils import INF
 
 
 class QuadraticDifferential(object):
     """Esta clase codifica una diferencial cuadratica en el plano"""
-    sensitivity = 1e-2
+    sensitivity = CLOSE_2POLE
 
     def __init__(self, quad=None, phase=None):
         if quad is not None:
@@ -26,7 +27,6 @@ class QuadraticDifferential(object):
 
         if phase is not None:
             self.phase = phase
-
 
     def __repr__(self):
         """Quadratic Differential representation string."""

@@ -22,7 +22,7 @@ class BasePlotter(object):
         self.plotpoints = []
         self.trajectories = {} if trajectories is None else trajectories
         self.saddles = []
-        self.phases = [1 + 0j]
+        self.phases = []
 
         self.solver = TrajectorySolver(self.qd)
         if solver_params is not None:
@@ -60,7 +60,7 @@ class BasePlotter(object):
         pickable_method = MethodProxy(self.solver, self.solver._calculate)
 
         pool = Pool()
-        results = pool.imap(pickable_method, tqdm(arguments))
+        results = pool.imap_unordered(pickable_method, tqdm(arguments))
         pool.close()
         pool.join()
 

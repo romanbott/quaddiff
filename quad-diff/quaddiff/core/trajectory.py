@@ -2,7 +2,7 @@
 
 import sys
 import numpy as np
-from cmath import *
+import cmath as cm
 from scipy.integrate import solve_ivp
 
 from .monodromy import Monodromy
@@ -17,13 +17,14 @@ class TrajectorySolver(object):
         'velocity_scale': VELOCITY_SCALE,
         'num_points': NUM_POINTS,
         'lim': LIM,
-        'max_step': MAX_STEP}
+        'max_step': MAX_STEP,
+        'distance_2line': DISTANCE_2LINE}
 
     def __init__(self, quad):
         self.qd = quad
 
     def calculate(self, point, phase=None):
-        """Calculate trayectory."""
+        """Calculate trajectory."""
         if phase is None:
             phase = self.qd.phase
 
@@ -33,12 +34,38 @@ class TrajectorySolver(object):
             point, self.qd, sign=-1, parameters=self.parameters, phase=phase)
 
         trajectory = list(reversed(negative_trajectory)) + positive_trajectory[1:]
-
+        distance_2line = self.parameters['distance_2line']
+        trajectory = clean_trajectory(trajectory, distance_2line=distance_2line)
         return trajectory
 
     def _calculate(self, arg):
         point, phase = arg
         return self.calculate(point, phase=phase)
+
+
+def clean_trajectory(
+        trajectory,
+        distance_2line=DISTANCE_2LINE):
+    last = trajectory[0]
+    reference_angle = (trajectory[1] - last)
+    new_trajectory = [last]
+
+    for i in range(1, len(trajectory) - 1):
+        point = trajectory[i]
+        component = orthogonal_component(reference_angle, point - last)
+        if component >= distance_2line:
+            last = point
+            new_trajectory.append(last)
+            reference_angle = trajectory[i + 1] - point
+
+    new_trajectory.append(trajectory[-1])
+    return new_trajectory
+
+
+def orthogonal_component(base, new):
+    v1 = base / abs(base)
+    component = -(new.real * v1.imag) + (new.imag * v1.real)
+    return abs(component)
 
 
 def calculate_ray(
@@ -71,7 +98,7 @@ def calculate_ray(
     if phase is None:
         phase = quad.phase
 
-    def vector_field(t, y):
+    def vector_field(t, y):  # pylint: disable=invalid-name
         real, img = y
         comp = complex(real, img)
         value = sqrt_monodromy(quad(comp, phase=phase).conjugate())
@@ -82,7 +109,7 @@ def calculate_ray(
         return value.real, value.imag
 
     # Termination events
-    def far_away(t, y):
+    def far_away(t, y):  # pylint: disable=invalid-name
         comp = complex(*y)
         if abs(comp) > lim:
             return 0
@@ -90,7 +117,7 @@ def calculate_ray(
             return 1
     far_away.terminal = True
 
-    def close_2pole(t, y):
+    def close_2pole(t, y):  # pylint: disable=invalid-name
         comp = complex(*y)
         if quad.close_2pole(comp):
             return 0
@@ -98,9 +125,9 @@ def calculate_ray(
             return 1
     close_2pole.terminal = True
 
-    def close_2start(t, y):
+    def close_2start(t, y): # pylint: disable=invalid-name
         comp = complex(*y)
-        if (abs(comp - starting_point) <= 1e-2) and t > 100:
+        if (abs(comp - starting_point) <= CLOSE_2START) and t > 100:
             return 0
         else:
             return 1

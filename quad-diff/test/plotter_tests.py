@@ -90,24 +90,34 @@ class MatplotlibPlotterTests(unittest.TestCase):
         self.qd = qd.QuadraticDifferential()
         self.plot = qd.MatplotlibPlotter(self.qd)
 
-    @unittest.skip("")
+    # @unittest.skip("")
     def test_plot(self):
-        self.qd.add_zero(2+.01j)
-        self.qd.add_smplpole(2j-0.1)
-        self.qd.add_dblpole(-1j)
-
-        self.plot.make_mesh()
-
-        self.plot.get_phase_plot(cm.rect(1, cm.pi * 0.5))
-
-    def test_animate(self):
-        random = np.random.uniform(-5, 5, size=[6, 2])
+        random = np.random.uniform(-5, 5, size=[8, 2])
         self.qd.add_zero(complex(*random[0]))
         self.qd.add_smplpole(complex(*random[1]))
         self.qd.add_dblpole(complex(*random[2]))
         self.qd.add_zero(complex(*random[3]))
         self.qd.add_smplpole(complex(*random[4]))
         self.qd.add_dblpole(complex(*random[5]))
+        self.qd.add_smplpole(complex(*random[6]))
+        self.qd.add_dblpole(complex(*random[7]))
+
+        self.plot.phases = [1j]
+        self.plot.make_mesh()
+
+        self.plot.get_phase_plot(1j)
+
+    @unittest.skip("")
+    def test_animate(self):
+        random = np.random.uniform(-5, 5, size=[8, 2])
+        self.qd.add_zero(complex(*random[0]))
+        self.qd.add_smplpole(complex(*random[1]))
+        self.qd.add_dblpole(complex(*random[2]))
+        self.qd.add_zero(complex(*random[3]))
+        self.qd.add_smplpole(complex(*random[4]))
+        self.qd.add_dblpole(complex(*random[5]))
+        self.qd.add_smplpole(complex(*random[6]))
+        self.qd.add_dblpole(complex(*random[7]))
 
         self.plot.make_mesh(N=6)
         self.plot.make_phase_mesh(N=6)

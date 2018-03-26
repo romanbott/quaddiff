@@ -19,7 +19,7 @@ class MatplotlibPlotter(BasePlotter):
     dblpole_marker = '*'
     axis = 'off'
 
-    def plot(self, lines, show=True):
+    def plot(self, lines, show=True, save=None):
         fig, ax = plt.subplots()
         ax.set_xlim(self.xlim[0], self.xlim[1])
         ax.set_ylim(self.ylim[0], self.ylim[1])
