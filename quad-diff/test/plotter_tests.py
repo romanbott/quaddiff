@@ -109,7 +109,6 @@ class MatplotlibPlotterTests(unittest.TestCase):
         self.qd.add_smplpole(complex(*random[4]))
         self.qd.add_dblpole(complex(*random[5]))
 
-        
         self.plot.make_mesh(N=6)
         self.plot.make_phase_mesh(N=6)
         self.plot.calculate_trajectories()

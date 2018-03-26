@@ -5,6 +5,7 @@ import cmath as cm
 import logging
 import json
 import os
+from tqdm import tqdm
 from multiprocessing import Pool
 
 from ..utils import MethodProxy
@@ -59,7 +60,7 @@ class BasePlotter(object):
         pickable_method = MethodProxy(self.solver, self.solver._calculate)
 
         pool = Pool()
-        results = pool.map(pickable_method, arguments)
+        results = pool.imap(pickable_method, tqdm(arguments))
         pool.close()
         pool.join()
 
