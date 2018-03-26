@@ -10,8 +10,10 @@ from multiprocessing import Pool
 from ..utils import MethodProxy
 from ..core.trajectory import TrajectorySolver
 
+
 class BasePlotter(object):
     """ Base Plotter class"""
+    name = 'Base'
     phase_points = 10
 
     def __init__(self, quad, solver_params=None, trajectories=None):
@@ -30,6 +32,9 @@ class BasePlotter(object):
     def add_plotpoint(self, z):
         self.plotpoints.append(z)
 
+    def add_phase(self, phase):
+        self.phases.append(phase)
+
     def make_mesh(self):
         pass
 
@@ -45,8 +50,7 @@ class BasePlotter(object):
                      for point in self.plotpoints
                      for phase in self.phases
                      if (point, phase) not in self.trajectories]
-        # points, phases = zip(*arguments)
-        logging.info('Computing {} new trayectories.'.format(len(arguments)))
+        print('{} trajectories to calculate'.format(len(arguments)))
 
         pickable_method = MethodProxy(self.solver, self.solver._calculate)
 
@@ -58,9 +62,27 @@ class BasePlotter(object):
         for arg, res in zip(arguments, results):
             self.trajectories[arg] = res
 
-        logging.info('done.')
+    def get_trajectories(self, phase=None, plotpoint=None):
+        if plotpoint is not None:
+            if plotpoint not in self.plotpoints:
+                msg = "Plotpoint selected is not in plotpoint list"
+                raise ValueError(msg)
 
-    def get_trayectories(phase=None, plotpoint=None):
+            selection = {
+                phase: self.trajectories[(plotpoint, phase)]
+                for phase in self.phases}
+        elif phase is not None:
+            if phase not in self.phases:
+                msg = "Phase selected is not in phases list"
+                raise ValueError(msg)
+
+            selection = {
+                point: self.trajectories[(point, phase)]
+                for point in self.plotpoints
+            }
+        else:
+            selection = self.trajectories
+        return selection
 
     def save_trajectories(self, path, name='quad_diff'):
         def pkey(key):
@@ -97,3 +119,27 @@ class BasePlotter(object):
 
         self.trajectories.update(parsed_trajectories)
         return parsed_trajectories
+
+    def get_phase_plot(self, phase, calculate=True):
+        if calculate:
+            if phase not in self.phases:
+                self.add_phase(phase)
+            self.calculate_trajectories()
+        else:
+            if phase not in self.phases:
+                msg = "Phase not in phase list. Please"
+                msg += " add phase to phase list and re-calculate"
+                msg += " the trajectories."
+                raise ValueError(msg)
+        lines = self.get_trajectories(phase=phase)
+        self.plot(lines)
+        
+    def __repr__(self):
+        msg = '{}Plotter Object:\n'.format(self.name)
+        msg += '\tPlotpoints: \n'
+        for point in self.plotpoints:
+            msg += '\t\t+ {} \n'.format(point)
+        msg += '\tPhases: \n'
+        for phase in self.phases:
+            msg += '\t\t+ {} \n'.format(phase)
+        return msg
