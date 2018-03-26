@@ -75,6 +75,11 @@ class QuadraticDifferential(object):
 
         return phase * zero_contrib * dblpoles_contrib * smplpoles_contrib
 
+    def clear(self):
+        self.zeros = []
+        self.smplpoles = []
+        self.dblpoles = []
+
     def add_zero(self, z):
         self.zeros.append(complex(z))
 

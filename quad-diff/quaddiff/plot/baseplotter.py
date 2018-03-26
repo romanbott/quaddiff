@@ -8,6 +8,8 @@ import os
 from tqdm import tqdm
 from multiprocessing import Pool
 
+from ..core.constants import *
+
 from ..utils import MethodProxy
 from ..core.trajectory import TrajectorySolver
 
@@ -15,18 +17,24 @@ from ..core.trajectory import TrajectorySolver
 class BasePlotter(object):
     """ Base Plotter class"""
     name = 'Base'
+    distance_2line = DISTANCE_2LINE
+    min_distance = MIN_DISTANCE
 
     def __init__(self, quad, solver_params=None, trajectories=None):
         self.qd = quad
 
         self.plotpoints = []
         self.trajectories = {} if trajectories is None else trajectories
-        self.saddles = []
         self.phases = []
 
         self.solver = TrajectorySolver(self.qd)
         if solver_params is not None:
             self.solver.parameters = solver_params
+
+    def clear(self):
+        self.plotpoints = []
+        self.phases = []
+        self.clear_trajectories()
 
     def add_plotpoint(self, z):
         self.plotpoints.append(z)
@@ -34,24 +42,25 @@ class BasePlotter(object):
     def add_phase(self, phase):
         self.phases.append(phase)
 
-    def make_mesh(self, N=6):
-        self.plotpoints = [
+    def add_point_mesh(self, N=6):
+        self.plotpoints += [
             complex(x, y)
             for x in np.linspace(-5, 5, N)
             for y in np.linspace(-5, 5, N)]
 
-    def make_phase_mesh(self, N=6):
-        self.phases = [
+    def add_phase_mesh(self, N=6):
+        self.phases += [
             cm.rect(1, t*2*cm.pi) for t in np.linspace(0, 1, N)]
 
-    def compute_saddles(self):
-        pass
+    def add_vecinity_points(self, point, N=10, epsilon=0.2):
+        self.plotpoints += [
+            point + cm.rect(epsilon, 2 * cm.pi * t)
+            for t in np.linspace(0, 1, N)]
 
     def clear_trajectories(self):
         self.trajectories = {}
-        self.saddles = []
 
-    def calculate_trajectories(self):
+    def calculate_trajectories(self, progressbar=True):
         arguments = [(point, phase)
                      for point in self.plotpoints
                      for phase in self.phases
@@ -59,15 +68,21 @@ class BasePlotter(object):
 
         pickable_method = MethodProxy(self.solver, self.solver._calculate)
 
+        logging.info('Computing trayectories')
+        if progressbar:
+            iterable = tqdm(arguments)
+        else:
+            iterable = arguments
+
         pool = Pool()
-        results = pool.imap_unordered(pickable_method, tqdm(arguments))
+        results = pool.imap(pickable_method, iterable)
         pool.close()
         pool.join()
 
         for arg, res in zip(arguments, results):
             self.trajectories[arg] = res
 
-    def get_trajectories(self, phase=None, plotpoint=None):
+    def get_trajectories(self, phase=None, plotpoint=None, simplify=True):
         if plotpoint is not None:
             if plotpoint not in self.plotpoints:
                 msg = "Plotpoint selected is not in plotpoint list"
@@ -87,6 +102,19 @@ class BasePlotter(object):
             }
         else:
             selection = self.trajectories
+
+        if simplify:
+            distance_2line = self.distance_2line
+            min_distance = self.min_distance
+
+            logging.info('Simplifying trayectories')
+            selection = {
+                key: simplify_trajectory(
+                    value,
+                    distance_2line=distance_2line,
+                    min_distance=min_distance)
+                for key, value in selection.iteritems()
+            }
         return selection
 
     def save_trajectories(self, path, name='quad_diff'):
@@ -139,6 +167,20 @@ class BasePlotter(object):
         lines = self.get_trajectories(phase=phase)
         self.plot(lines, **kwargs)
 
+    def get_point_plot(self, plotpoint, calculate=True, **kwargs):
+        if calculate:
+            if plotpoint not in self.plotpoints:
+                self.add_plotpoint(plotpoint)
+            self.calculate_trajectories()
+        else:
+            if phase not in self.phases:
+                msg = "Phase not in phase list. Please"
+                msg += " add phase to phase list and re-calculate"
+                msg += " the trajectories."
+                raise ValueError(msg)
+        lines = self.get_trajectories(plotpoint=plotpoint)
+        self.plot(lines, **kwargs)
+
     def __repr__(self):
         msg = '{}Plotter Object:\n'.format(self.name)
         msg += '\tPlotpoints: \n'
@@ -148,3 +190,30 @@ class BasePlotter(object):
         for phase in self.phases:
             msg += '\t\t+ {} \n'.format(phase)
         return msg
+
+
+def simplify_trajectory(
+        trajectory,
+        distance_2line=DISTANCE_2LINE,
+        min_distance=MIN_DISTANCE):
+    last = trajectory[0]
+    reference_angle = (trajectory[1] - last)
+    new_trajectory = [last]
+
+    for i in range(1, len(trajectory) - 1):
+        point = trajectory[i]
+        component = orthogonal_component(reference_angle, point - last)
+        if (component >= distance_2line and 
+                abs(point - last) >= min_distance):
+            last = point
+            new_trajectory.append(last)
+            reference_angle = trajectory[i + 1] - point
+
+    new_trajectory.append(trajectory[-1])
+    return new_trajectory
+
+
+def orthogonal_component(base, new):
+    v1 = base / abs(base)
+    component = -(new.real * v1.imag) + (new.imag * v1.real)
+    return abs(component)

@@ -19,7 +19,8 @@ class TrajectorySolver(object):
         'lim': LIM,
         'max_step': MAX_STEP,
         'distance_2line': DISTANCE_2LINE,
-        'min_distance': MIN_DISTANCE}
+        'min_distance': MIN_DISTANCE,
+        'center': 0j}
 
     def __init__(self, quad):
         self.qd = quad
@@ -35,46 +36,11 @@ class TrajectorySolver(object):
             point, self.qd, sign=-1, parameters=self.parameters, phase=phase)
 
         trajectory = list(reversed(negative_trajectory)) + positive_trajectory[1:]
-
-        min_distance = self.parameters['min_distance']
-        distance_2line = self.parameters['distance_2line']
-        trajectory = clean_trajectory(
-            trajectory,
-            distance_2line=distance_2line,
-            min_distance=min_distance)
         return trajectory
 
     def _calculate(self, arg):
         point, phase = arg
         return self.calculate(point, phase=phase)
-
-
-def clean_trajectory(
-        trajectory,
-        distance_2line=DISTANCE_2LINE,
-        min_distance=MIN_DISTANCE):
-    last = trajectory[0]
-    reference_angle = (trajectory[1] - last)
-    new_trajectory = [last]
-
-    for i in range(1, len(trajectory) - 1):
-        point = trajectory[i]
-        component = orthogonal_component(reference_angle, point - last)
-        if (component >= distance_2line and 
-                abs(point - last) >= min_distance):
-            last = point
-            new_trajectory.append(last)
-            reference_angle = trajectory[i + 1] - point
-
-    new_trajectory.append(trajectory[-1])
-    return new_trajectory
-
-
-def orthogonal_component(base, new):
-    v1 = base / abs(base)
-    component = -(new.real * v1.imag) + (new.imag * v1.real)
-    return abs(component)
-
 
 def calculate_ray(
         starting_point,
@@ -88,6 +54,7 @@ def calculate_ray(
     max_step = parameters.get('max_step', MAX_STEP)
     velocity_scale = parameters.get('velocity_scale', VELOCITY_SCALE)
     lim = parameters.get('lim', LIM)
+    center = parameters.get('center', 0j)
 
     # Monodromy
     sqrt_monodromy = Monodromy(quad(starting_point))
@@ -119,7 +86,7 @@ def calculate_ray(
     # Termination events
     def far_away(t, y):  # pylint: disable=invalid-name
         comp = complex(*y)
-        if abs(comp) > lim:
+        if abs(comp - center) > lim:
             return 0
         else:
             return 1

@@ -1,3 +1,4 @@
+import os
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
@@ -11,7 +12,7 @@ class MatplotlibPlotter(BasePlotter):
     linewidths = 1
     colors = ['#000000']
     linestyles = 'solid'
-    cmap = None
+    cmap = 'jet'
     xlim = [-5, 5]
     ylim = [-5, 5]
     zero_marker = 'o'
@@ -20,7 +21,7 @@ class MatplotlibPlotter(BasePlotter):
     axis = 'off'
     format = 'png'
 
-    def plot(self, lines, show=True, save=None):
+    def plot(self, lines, show=True, save=None, dir='.'):
         fig, ax = plt.subplots()
         ax.set_xlim(self.xlim[0], self.xlim[1])
         ax.set_ylim(self.ylim[0], self.ylim[1])
@@ -33,7 +34,8 @@ class MatplotlibPlotter(BasePlotter):
         if show:
             plt.show()
         if save is not None:
-            plt.savefig('{}.{}'.format(save, self.format))
+            path = os.path.join(dir,  save)
+            plt.savefig('{}.{}'.format(path, self.format))
         plt.close()
 
     def plot_lines(self, lines, ax):
@@ -45,10 +47,10 @@ class MatplotlibPlotter(BasePlotter):
             cmap=self.cmap)
         ax.add_collection(collection)
 
-    def animate(self):
-        fig, ax = plt.subplots()
+    def animate(self, save=None, show=True):
+        self.calculate_trajectories()
         frames = self.phases
-        self.compute_trajectories()
+        fig, ax = plt.subplots()
 
         def update(phase):
             lines = self.get_trajectories(phase=phase)
@@ -63,7 +65,11 @@ class MatplotlibPlotter(BasePlotter):
             plt.axis(self.axis)
 
         anim = FuncAnimation(fig, update, frames=frames, interval=200)
-        plt.show()
+
+        if save is not None:
+            anim.save(save + '.gif', dpi=80, writer='imagemagick')
+        if show:
+            plt.show()
 
     def plot_zeros(self):
         if self.qd.zeros:
