@@ -18,7 +18,8 @@ class TrajectorySolver(object):
         'num_points': NUM_POINTS,
         'lim': LIM,
         'max_step': MAX_STEP,
-        'distance_2line': DISTANCE_2LINE}
+        'distance_2line': DISTANCE_2LINE,
+        'min_distance': MIN_DISTANCE}
 
     def __init__(self, quad):
         self.qd = quad
@@ -34,8 +35,13 @@ class TrajectorySolver(object):
             point, self.qd, sign=-1, parameters=self.parameters, phase=phase)
 
         trajectory = list(reversed(negative_trajectory)) + positive_trajectory[1:]
+
+        min_distance = self.parameters['min_distance']
         distance_2line = self.parameters['distance_2line']
-        trajectory = clean_trajectory(trajectory, distance_2line=distance_2line)
+        trajectory = clean_trajectory(
+            trajectory,
+            distance_2line=distance_2line,
+            min_distance=min_distance)
         return trajectory
 
     def _calculate(self, arg):
@@ -45,7 +51,8 @@ class TrajectorySolver(object):
 
 def clean_trajectory(
         trajectory,
-        distance_2line=DISTANCE_2LINE):
+        distance_2line=DISTANCE_2LINE,
+        min_distance=MIN_DISTANCE):
     last = trajectory[0]
     reference_angle = (trajectory[1] - last)
     new_trajectory = [last]
@@ -53,7 +60,8 @@ def clean_trajectory(
     for i in range(1, len(trajectory) - 1):
         point = trajectory[i]
         component = orthogonal_component(reference_angle, point - last)
-        if component >= distance_2line:
+        if (component >= distance_2line and 
+                abs(point - last) >= min_distance):
             last = point
             new_trajectory.append(last)
             reference_angle = trajectory[i + 1] - point

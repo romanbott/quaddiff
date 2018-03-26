@@ -18,6 +18,7 @@ class MatplotlibPlotter(BasePlotter):
     smplpole_marker = 'x'
     dblpole_marker = '*'
     axis = 'off'
+    format = 'png'
 
     def plot(self, lines, show=True, save=None):
         fig, ax = plt.subplots()
@@ -31,7 +32,9 @@ class MatplotlibPlotter(BasePlotter):
         plt.axis(self.axis)
         if show:
             plt.show()
-        return fig
+        if save is not None:
+            plt.savefig('{}.{}'.format(save, self.format))
+        plt.close()
 
     def plot_lines(self, lines, ax):
         collection = LineCollection(
@@ -45,6 +48,7 @@ class MatplotlibPlotter(BasePlotter):
     def animate(self):
         fig, ax = plt.subplots()
         frames = self.phases
+        self.compute_trajectories()
 
         def update(phase):
             lines = self.get_trajectories(phase=phase)

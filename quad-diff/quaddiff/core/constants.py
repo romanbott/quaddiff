@@ -14,3 +14,4 @@ LIM = 30
 
 # Trajectory simplification
 DISTANCE_2LINE = 0.03
+MIN_DISTANCE = 0.01

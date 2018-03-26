@@ -91,7 +91,7 @@ class MatplotlibPlotterTests(unittest.TestCase):
         self.plot = qd.MatplotlibPlotter(self.qd)
 
     # @unittest.skip("")
-    def test_plot(self):
+    def test_phase_plot(self):
         random = np.random.uniform(-5, 5, size=[8, 2])
         self.qd.add_zero(complex(*random[0]))
         self.qd.add_smplpole(complex(*random[1]))
@@ -104,8 +104,9 @@ class MatplotlibPlotterTests(unittest.TestCase):
 
         self.plot.phases = [1j]
         self.plot.make_mesh()
+        self.plot.format = 'svg'
 
-        self.plot.get_phase_plot(1j)
+        self.plot.get_phase_plot(1j, show=False, save=None)
 
     @unittest.skip("")
     def test_animate(self):

@@ -125,7 +125,7 @@ class BasePlotter(object):
         self.trajectories.update(parsed_trajectories)
         return parsed_trajectories
 
-    def get_phase_plot(self, phase, calculate=True):
+    def get_phase_plot(self, phase, calculate=True, **kwargs):
         if calculate:
             if phase not in self.phases:
                 self.add_phase(phase)
@@ -137,7 +137,7 @@ class BasePlotter(object):
                 msg += " the trajectories."
                 raise ValueError(msg)
         lines = self.get_trajectories(phase=phase)
-        self.plot(lines)
+        self.plot(lines, **kwargs)
 
     def __repr__(self):
         msg = '{}Plotter Object:\n'.format(self.name)
