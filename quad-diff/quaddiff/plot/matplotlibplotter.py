@@ -62,13 +62,20 @@ class MatplotlibPlotter(BasePlotter):
         plt.show()
 
     def plot_zeros(self):
-        X, Y = zip(*[(x.real, x.imag) for x in self.qd.zeros])
-        plt.plot(X, Y, self.zero_marker, label='zeros')
+        if self.qd.zeros:
+            X, Y = self._complex2XY(self.qd.zeros)
+            plt.plot(X, Y, self.zero_marker, label='zeros')
 
     def plot_smplpoles(self):
-        X, Y = zip(*[(x.real, x.imag) for x in self.qd.smplpoles])
-        plt.plot(X, Y, self.smplpole_marker, label='simple poles')
+        if self.qd.smplpoles:
+            X, Y = self._complex2XY(self.qd.smplpoles)
+            plt.plot(X, Y, self.smplpole_marker, label='simple poles')
 
     def plot_dblpoles(self):
-        X, Y = zip(*[(x.real, x.imag) for x in self.qd.dblpoles])
-        plt.plot(X, Y, self.dblpole_marker, label='double poles')
+        if self.qd.dblpoles:
+            X, Y = self._complex2XY(self.qd.dblpoles)
+            plt.plot(X, Y, self.dblpole_marker, label='double poles')
+
+    def _complex2XY(self, complex_list):
+        X, Y = zip(*[(z.real, z.imag) for z in complex_list])
+        return X, Y
