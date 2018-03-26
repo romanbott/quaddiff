@@ -1,7 +1,7 @@
 """Base plotter module."""
 
-from cmath import *
 import numpy as np
+import cmath as cm
 import logging
 import json
 import os
@@ -14,7 +14,6 @@ from ..core.trajectory import TrajectorySolver
 class BasePlotter(object):
     """ Base Plotter class"""
     name = 'Base'
-    phase_points = 10
 
     def __init__(self, quad, solver_params=None, trajectories=None):
         self.qd = quad
@@ -22,8 +21,7 @@ class BasePlotter(object):
         self.plotpoints = []
         self.trajectories = {} if trajectories is None else trajectories
         self.saddles = []
-        self.phases = [
-            exp(t*pi*2j) for t in np.linspace(0, 1, self.phase_points)]
+        self.phases = [1 + 0j]
 
         self.solver = TrajectorySolver(self.qd)
         if solver_params is not None:
@@ -35,8 +33,15 @@ class BasePlotter(object):
     def add_phase(self, phase):
         self.phases.append(phase)
 
-    def make_mesh(self):
-        pass
+    def make_mesh(self, N=6):
+        self.plotpoints = [
+            complex(x, y)
+            for x in np.linspace(-5, 5, N)
+            for y in np.linspace(-5, 5, N)]
+
+    def make_phase_mesh(self, N=6):
+        self.phases = [
+            cm.rect(1, t*2*cm.pi) for t in np.linspace(0, 1, N)]
 
     def compute_saddles(self):
         pass
@@ -50,7 +55,6 @@ class BasePlotter(object):
                      for point in self.plotpoints
                      for phase in self.phases
                      if (point, phase) not in self.trajectories]
-        print('{} trajectories to calculate'.format(len(arguments)))
 
         pickable_method = MethodProxy(self.solver, self.solver._calculate)
 
@@ -133,7 +137,7 @@ class BasePlotter(object):
                 raise ValueError(msg)
         lines = self.get_trajectories(phase=phase)
         self.plot(lines)
-        
+
     def __repr__(self):
         msg = '{}Plotter Object:\n'.format(self.name)
         msg += '\tPlotpoints: \n'
