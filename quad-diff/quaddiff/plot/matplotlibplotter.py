@@ -19,14 +19,21 @@ class MatplotlibPlotter(BasePlotter):
     dblpole_marker = '*'
     axis = 'off'
 
-    def plot(self, lines):
+    def plot(self, lines, show=True):
         fig, ax = plt.subplots()
-        self._plot(lines, ax)
-        plt.show()
-
-    def _plot(self, lines, ax):
         ax.set_xlim(self.xlim[0], self.xlim[1])
         ax.set_ylim(self.ylim[0], self.ylim[1])
+        self.plot_lines(lines, ax)
+        self.plot_zeros()
+        self.plot_smplpoles()
+        self.plot_dblpoles()
+        plt.legend()
+        plt.axis(self.axis)
+        if show:
+            plt.show()
+        return fig
+
+    def plot_lines(self, lines, ax):
         collection = LineCollection(
             tuple([[(z.real, z.imag) for z in line] for line in lines.values()]),
             linewidths=self.linewidths,
@@ -34,11 +41,6 @@ class MatplotlibPlotter(BasePlotter):
             linestyles=self.linestyles,
             cmap=self.cmap)
         ax.add_collection(collection)
-        self.plot_zeros()
-        self.plot_smplpoles()
-        self.plot_dblpoles()
-        plt.legend()
-        plt.axis(self.axis)
 
     def animate(self):
         fig, ax = plt.subplots()
@@ -46,7 +48,15 @@ class MatplotlibPlotter(BasePlotter):
 
         def update(phase):
             lines = self.get_trajectories(phase=phase)
-            self._plot(lines, ax)
+            ax.clear()
+            ax.set_xlim(self.xlim[0], self.xlim[1])
+            ax.set_ylim(self.ylim[0], self.ylim[1])
+            self.plot_zeros()
+            self.plot_smplpoles()
+            self.plot_dblpoles()
+            self.plot_lines(lines, ax)
+            plt.legend()
+            plt.axis(self.axis)
 
         anim = FuncAnimation(fig, update, frames=frames, interval=200)
         plt.show()
