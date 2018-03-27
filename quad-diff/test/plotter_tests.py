@@ -91,7 +91,7 @@ class MatplotlibPlotterTests(unittest.TestCase):
         self.qd = qd.QuadraticDifferential()
         self.plot = qd.MatplotlibPlotter(self.qd)
 
-    @unittest.skip("")
+    # @unittest.skip("")
     def test_phase_plot(self):
         random = np.random.uniform(-5, 5, size=[8, 2])
         self.qd.add_zero(complex(*random[0]))
@@ -109,7 +109,7 @@ class MatplotlibPlotterTests(unittest.TestCase):
 
         self.plot.get_phase_plot(1j, save='phase_plot', show=False)
 
-    @unittest.skip("")
+    # @unittest.skip("")
     def test_animate(self):
         random = np.random.uniform(-5, 5, size=[8, 2])
         self.qd.add_zero(complex(*random[0]))
@@ -126,7 +126,7 @@ class MatplotlibPlotterTests(unittest.TestCase):
 
         self.plot.animate(save='animate_plot', show=False)
 
-    @unittest.skip("")
+    # @unittest.skip("")
     def test_point_plot(self):
         random = np.random.uniform(-5, 5, size=[8, 2])
         self.qd.add_zero(complex(*random[0]))
@@ -157,7 +157,7 @@ class MatplotlibPlotterTests(unittest.TestCase):
         self.qd.add_dblpole(pole)
 
         self.plot.add_vecinity_points(pole, N=100)
-        self.plot.get_phase_plot(1, show=True)
+        self.plot.get_phase_plot(1, save='vicinity_plot', show=False)
 
 
 if __name__ == '__main__':

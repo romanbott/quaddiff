@@ -5,7 +5,9 @@ import numpy as np
 from .core.quaddiff import QuadraticDifferential
 from .core.monodromy import Monodromy
 from .core.trajectory import TrajectorySolver
+from .core.trajectory import Trajectory
 from .plot.baseplotter import BasePlotter
+from .analyzer import Analyzer
 from .plot import *
 from .utils import INF
 
@@ -14,6 +16,7 @@ class QD(object):
     def __init__(self, qd=None, plotter=None):
         self.qd = QuadraticDifferential()
         self.plotter = MatplotlibPlotter(self.qd)
+        self.analyzer = Analyzer(self.qd)
 
     def add_zero(self, zero):
         self.qd.add_zero(zero)

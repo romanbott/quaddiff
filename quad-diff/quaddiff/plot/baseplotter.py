@@ -109,10 +109,7 @@ class BasePlotter(object):
 
             logging.info('Simplifying trayectories')
             selection = {
-                key: simplify_trajectory(
-                    value,
-                    distance_2line=distance_2line,
-                    min_distance=min_distance)
+                key: value.simplify()
                 for key, value in selection.iteritems()
             }
         return selection
@@ -192,28 +189,3 @@ class BasePlotter(object):
         return msg
 
 
-def simplify_trajectory(
-        trajectory,
-        distance_2line=DISTANCE_2LINE,
-        min_distance=MIN_DISTANCE):
-    last = trajectory[0]
-    reference_angle = (trajectory[1] - last)
-    new_trajectory = [last]
-
-    for i in range(1, len(trajectory) - 1):
-        point = trajectory[i]
-        component = orthogonal_component(reference_angle, point - last)
-        if (component >= distance_2line and 
-                abs(point - last) >= min_distance):
-            last = point
-            new_trajectory.append(last)
-            reference_angle = trajectory[i + 1] - point
-
-    new_trajectory.append(trajectory[-1])
-    return new_trajectory
-
-
-def orthogonal_component(base, new):
-    v1 = base / abs(base)
-    component = -(new.real * v1.imag) + (new.imag * v1.real)
-    return abs(component)

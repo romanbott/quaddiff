@@ -1,4 +1,5 @@
 """Utils for Quadratic Differential Package."""
+from core.constants import *
 
 
 class Inf(object):
@@ -53,32 +54,33 @@ class MethodProxy(object):
         else:
             assert callable(method)
             self.methodName = method.func_name
+
     def __call__(self, *args, **kwargs):
         return getattr(self.obj, self.methodName)(*args, **kwargs)
 
 
-# lim = 30
-# maxreps = 500000
-# maxint = 500
-# t= np.linspace(0,.1,10) #intervalo temporal
-# densidadPuntos=0.01
-# normav = 0.001
-# normav = 0.0002
-# def fase_silla(z,w,quad):
-#     longitud_silla=integrar(z,w,quad)
-#     fase_silla=longitud_silla/abs(longitud_silla)
-#     fase_silla=fase_silla**2
-#     return fase_silla.conjugate()
-# ri=sqrt(1j)
-# ric=sqrt(-1j)
-# def integrar(x,y,quad, pasos=10**4):
-#     paso = (y-x)/pasos
-#     medio_paso = paso/2
-#     mon=Monodromy(quad(x))
-#     integral = 0
-#     for i in range(pasos):
-#         #integral += mon.dist(quad(x+medio_paso))*paso*sqrt(abs(quad.QD(x+medio_paso)))
-#         integral += paso*(sqrt(abs(quad.QD(x)))*mon.dist(quad(x))   +  sqrt(abs(quad.QD(x+paso)))*mon.dist(quad(x+paso))     )/2
-#         x+=paso
-#         mon(quad(x))
-#     return integral
+def simplify_trajectory(
+        trajectory,
+        distance_2line=DISTANCE_2LINE,
+        min_distance=MIN_DISTANCE):
+    last = trajectory[0]
+    reference_angle = (trajectory[1] - last)
+    new_trajectory = [last]
+
+    for i in range(1, len(trajectory) - 1):
+        point = trajectory[i]
+        component = orthogonal_component(reference_angle, point - last)
+        if (component >= distance_2line and
+                abs(point - last) >= min_distance):
+            last = point
+            new_trajectory.append(last)
+            reference_angle = trajectory[i + 1] - point
+
+    new_trajectory.append(trajectory[-1])
+    return new_trajectory
+
+
+def orthogonal_component(base, new):
+    direction = base / abs(base)
+    component = -(new.real * direction.imag) + (new.imag * direction.real)
+    return abs(component)

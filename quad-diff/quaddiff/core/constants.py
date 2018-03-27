@@ -8,10 +8,12 @@ MAX_STEP = 0.3
 
 # Event constants
 CLOSE_2START = 0.1
-CLOSE_2POLE = 0.1
+CLOSE_2POLE = 0.05
 LIM = 30
 
-
-# Trajectory simplification
+# ---- Trajectory constants
+# Simplification
 DISTANCE_2LINE = 0.03
 MIN_DISTANCE = 0.01
+# Convergence
+DISTANCE_2LIMIT = CLOSE_2POLE
