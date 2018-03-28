@@ -22,7 +22,7 @@ class Trajectory(object):
             self.trajectory,
             distance_2line=distance_2line,
             min_distance=min_distance)
-        return simplified
+        return Trajectory(simplified, basepoint=self.basepoint)
 
     def __getitem__(self, key):
         return self.trajectory[key]
@@ -154,7 +154,7 @@ def calculate_ray(
         comp = complex(*y)
         value = sqrt_monodromy(quad(comp, phase=phase, normalize=True).conjugate())
         value *= velocity_scale
-        if abs(comp) > 1:
+        if abs(comp) > parameters.get('lim', LIM) / 3.0:
             value *= abs(comp)
         value *= sign
         return value.real, value.imag

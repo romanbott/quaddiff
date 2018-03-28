@@ -20,6 +20,7 @@ class MatplotlibPlotter(BasePlotter):
     zero_marker = 'o'
     smplpole_marker = 'x'
     dblpole_marker = '*'
+    plotpoints_marker = '.'
     axis = 'off'
     animation_interval = 200
     format = 'png'
@@ -50,6 +51,10 @@ class MatplotlibPlotter(BasePlotter):
             colors=self.colors,
             linestyles=self.linestyles,
             cmap=self.cmap)
+        # Plotpoints
+        plotpoints = [t.basepoint for t in lines.values()]
+        X, Y = zip(*[(z.real, z.imag) for z in plotpoints])
+        plt.plot(X, Y, self.plotpoints_marker, label='plotpoints')
         ax.add_collection(collection)
 
     def animate(self, save=None, show=True):

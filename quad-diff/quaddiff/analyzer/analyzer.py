@@ -15,7 +15,7 @@ class Analyzer(object):
         self.critical_trajectories = {}
 
     def critical_trajectories_zero(self, zero, phase):
-        linearized_quaddiff = self.qd(zero, ignore_zero=True)
+        linearized_quaddiff = self.qd(zero, ignore_zero=True, normalize=True)
         phase_cbrt = cm.exp(cm.log(phase)/3)
         lqd_cbrt = cm.exp(cm.log(linearized_quaddiff)/3)
         unit_cbrt = cm.rect(1, 2 * cm.pi / 3.0)

@@ -24,10 +24,10 @@ class QuadraticDifferential(object):
             self.zeros = []
             self.dblpoles = []
             self.smplpoles = []
-            self.phase = complex(1)
+            self._phase = complex(1)
 
         if phase is not None:
-            self.phase = phase
+            self._phase = phase / abs(phase)
 
     def __repr__(self):
         """Quadratic Differential representation string."""
@@ -38,10 +38,18 @@ class QuadraticDifferential(object):
         return msg
 
     @property
+    def phase(self):
+        return self._phase
+
+    @phase.setter
+    def phase(self, phase):
+        self._phase = phase / abs(phase)
+
+    @property
     def size(self):
         return len(self.zeros) + len(self.dblpoles) + len(self.smplpoles)
 
-    def __call__(self, z, ignore_zero=False, phase=None, normalize=False):
+    def __call__(self, z, ignore_zero=False, phase=None, normalize=True):
         # Check if any zeros or poles have been defined
         if self.size == 0:
             msg = "Quadratic Differential is empty:\n {}".format(self)
@@ -57,25 +65,34 @@ class QuadraticDifferential(object):
         # Select Quad Diff phase if no phase has been given
         phase = self.phase if phase is None else phase
 
-        zeros_contrib = np.array(self.zeros) - z
-        dblpoles_contrib = np.array(self.dblpoles) - z
-        smplpoles_contrib = np.array(self.smplpoles) - z
-
-        if normalize:
-            zeros_contrib /= np.abs(zeros_contrib)
-            dblpoles_contrib /= np.abs(dblpoles_contrib)
-            smplpoles_contrib /= np.abs(smplpoles_contrib)
+        value = phase
+        # Multiply all zero's monomials
+        for zero in zeros:
+            contrib = z - zero
+            if normalize:
+                contrib /= abs(contrib)
+            value *= contrib
 
         try:
-            zeros_contrib = np.prod(zeros_contrib)
-            dblpoles_contrib = np.prod(dblpoles_contrib**(-2))
-            smplpoles_contrib = np.prod(smplpoles_contrib**(-1))
+            # Multiply all simple pole's monomials
+            for pole in self.smplpoles:
+                contrib = z - pole
+                if normalize:
+                    contrib /= abs(contrib)
+                value *= contrib**(-1)
+
+            # Multiply all double pole's monomials
+            for pole in self.dblpoles:
+                contrib = z - pole
+                if normalize:
+                    contrib /= abs(contrib)
+                value *= contrib**(-2)
 
         # If z is a pole return INF(nity)
         except ZeroDivisionError:
             return INF
 
-        return phase * zeros_contrib * dblpoles_contrib * smplpoles_contrib
+        return value
 
     def clear(self):
         self.zeros = []
