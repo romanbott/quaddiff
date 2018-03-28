@@ -3,12 +3,15 @@ import cmath as cm
 from .. import QuadraticDifferential
 from .. import TrajectorySolver
 
+from ..core.constants import *  # pylint: disable=wildcard-import
+
 
 class Analyzer(object):
     epsilon = 1e-3
+    distance_2limit = DISTANCE_2LIMIT
 
     def __init__(self, quad):
-        self.qd = quad
+        self.qd = quad  # pylint: disable=invalid-name
         self.critical_trajectories = {}
 
     def critical_trajectories_zero(self, zero, phase):

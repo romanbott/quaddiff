@@ -12,18 +12,16 @@ from .constants import *
 
 
 class Trajectory(object):
-    distance_2line = DISTANCE_2LINE
-    min_distance = MIN_DISTANCE
-    distance_2limit = DISTANCE_2LIMIT
-
-    def __init__(self, trajectory):
+    
+    def __init__(self, trajectory, basepoint=None):
         self.trajectory = trajectory
+        self.basepoint = basepoint
 
-    def simplify(self):
+    def simplify(self, distance_2line=DISTANCE_2LINE, min_distance=MIN_DISTANCE):
         simplified = simplify_trajectory(
             self.trajectory,
-            distance_2line=self.distance_2line,
-            min_distance=self.min_distance)
+            distance_2line=distance_2line,
+            min_distance=min_distance)
         return simplified
 
     def __getitem__(self, key):
@@ -78,12 +76,12 @@ class Trajectory(object):
 
         return intersections.any()
 
-    def converges(self, point):
+    def converges(self, point, distance_2limit=DISTANCE_2LIMIT):
         start = self[0]
         end = self[-1]
 
-        start_close_to_point = abs(point - start) <= self.distance_2limit
-        end_close_to_point = abs(point - end) <= self.distance_2limit
+        start_close_to_point = abs(point - start) <= distance_2limit
+        end_close_to_point = abs(point - end) <= distance_2limit
         return start_close_to_point | end_close_to_point
 
 
@@ -126,7 +124,7 @@ class TrajectorySolver(object):
 
         trajectory = list(reversed(negative_trajectory)) + \
             positive_trajectory[1:]
-        return Trajectory(trajectory)
+        return Trajectory(trajectory, point)
 
     def _calculate(self, arg):
         point, phase = arg

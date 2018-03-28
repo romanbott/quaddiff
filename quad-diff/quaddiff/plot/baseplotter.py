@@ -109,7 +109,9 @@ class BasePlotter(object):
 
             logging.info('Simplifying trayectories')
             selection = {
-                key: value.simplify()
+                key: value.simplify(
+                    distance_2line=self.distance_2line,
+                    min_distance=self.min_distance)
                 for key, value in selection.iteritems()
             }
         return selection
