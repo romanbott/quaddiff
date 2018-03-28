@@ -175,17 +175,14 @@ def calculate_ray(
     close = parameters.get('close_2pole', CLOSE_2POLE)
     def close_2pole(t, y):  # pylint: disable=invalid-name
         comp = complex(*y)
-        if quad.close_2pole(comp, close):
-            return 0
-        else:
-            return 1
+        return quad.distance_2poles(comp) - close
     close_2pole.terminal = True
 
     close = parameters.get('close_2start', CLOSE_2START)
     def close_2start(t, y):  # pylint: disable=invalid-name
         comp = complex(*y)
-        if (abs(comp - starting_point) <= close) and t > 100:
-            return 0
+        if t >= 100:
+            return abs(comp - starting_point) - close
         else:
             return 1
     close_2start.terminal = True
@@ -193,11 +190,8 @@ def calculate_ray(
     close = parameters.get('close_2zero', CLOSE_2ZERO)
     def close_2zero(t, y):
         comp = complex(*y)
-        if quad.close_2zero(comp, close):
-            return 0
-        else:
-            return 1
-        close_2pole.terminal = True
+        return quad.distance_2zeros(comp) - close
+    close_2zero.terminal = True
 
     # Calculate solution with solve_ivp
     max_time = parameters.get('max_time', MAX_TIME)

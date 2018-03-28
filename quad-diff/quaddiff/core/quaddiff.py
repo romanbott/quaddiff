@@ -35,6 +35,7 @@ class QuadraticDifferential(object):
         msg += "\t Zeros: {}\n".format(self.zeros)
         msg += "\t Simple Poles: {}\n".format(self.smplpoles)
         msg += "\t Double Poles: {}\n".format(self.dblpoles)
+        msg += "\t Current Phase: {}\n".format(self.phase)
         return msg
 
     @property
@@ -108,27 +109,18 @@ class QuadraticDifferential(object):
     def add_smplpole(self, z):
         self.smplpoles.append(complex(z))
 
-    def _close_2dblpole(self, z, sensitivity):
-        for x in self.dblpoles:
-            if abs(z-x) < sensitivity:
-                return True
-        return False
+    def distance_2poles(self, z):
+        all_poles = self.smplpoles + self.dblpoles
+        if len(all_poles) == 0:
+            return 1
+        dist = min([abs(z - pole) for pole in all_poles])
+        return dist
 
-    def _close_2smplpole(self, z, sensitivity):
-        for x in self.smplpoles:
-            if abs(z-x) < sensitivity:
-                return True
-        return False
-
-    def close_2pole(self, z, sensitivity):
-        return self._close_2smplpole(z, sensitivity) | \
-            self._close_2dblpole(z, sensitivity)
-
-    def close_2zero(self, z, sensitivity):
-        for x in self.zeros:
-            if abs(z - x) < sensitivity:
-                return True
-        return False
+    def distance_2zeros(self, z):
+        if len(self.zeros) == 0:
+            return 1
+        dist = min([abs(z - zero) for zero in self.zeros])
+        return dist
 
     def integrate(self, trajectory):
         starting_point = trajectory[0]

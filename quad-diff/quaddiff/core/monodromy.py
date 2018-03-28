@@ -17,8 +17,8 @@ class Monodromy(object):
         change = new_point / self.point
         self.point = new_point
         arg_change = cm.phase(change)
-        # if abs(arg_change) > (cm.pi / 2):
-        #     logging.info('Large steps can lead to erroneous monodromy')
+        #if abs(arg_change) > (cm.pi / 2):
+        #    logging.info('Large steps can lead to erroneous monodromy')
         self.phase += arg_change
 
     def __call__(self, z):
