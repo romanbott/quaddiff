@@ -45,10 +45,8 @@ class Trajectory(object):
     def intersects(self, other, simplify=False):
         if simplify:
             line = self.simplify()
-            other = other.simplify()
         else:
             line = self.trajectory
-            other = other.trajectory
 
         line_array = np.array(line)
         other_array = np.array(other)
@@ -128,7 +126,8 @@ class TrajectorySolver(object):
 
     def _calculate(self, arg):
         point, phase = arg
-        return self.calculate(point, phase=phase)
+        trajectory = self.calculate(point, phase=phase)
+        return (arg, trajectory)
 
 
 def calculate_ray(
@@ -153,7 +152,7 @@ def calculate_ray(
     def vector_field(t, y):  # pylint: disable=invalid-name
         velocity_scale = parameters.get('velocity_scale', VELOCITY_SCALE)
         comp = complex(*y)
-        value = sqrt_monodromy(quad(comp, phase=phase).conjugate())
+        value = sqrt_monodromy(quad(comp, phase=phase, normalize=True).conjugate())
         value *= velocity_scale
         if abs(comp) > 1:
             value *= abs(comp)

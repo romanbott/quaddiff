@@ -41,7 +41,7 @@ class QuadraticDifferential(object):
     def size(self):
         return len(self.zeros) + len(self.dblpoles) + len(self.smplpoles)
 
-    def __call__(self, z, ignore_zero=False, phase=None):
+    def __call__(self, z, ignore_zero=False, phase=None, normalize=False):
         # Check if any zeros or poles have been defined
         if self.size == 0:
             msg = "Quadratic Differential is empty:\n {}".format(self)
@@ -57,24 +57,25 @@ class QuadraticDifferential(object):
         # Select Quad Diff phase if no phase has been given
         phase = self.phase if phase is None else phase
 
-        # Multiply all normalized zero's monomials
-        zero_contrib = reduce(
-            lambda x, y: x * (z - y) / abs(z - y),
-            zeros, 1)
+        zeros_contrib = np.array(self.zeros) - z
+        dblpoles_contrib = np.array(self.dblpoles) - z
+        smplpoles_contrib = np.array(self.smplpoles) - z
+
+        if normalize:
+            zeros_contrib /= np.abs(zeros_contrib)
+            dblpoles_contrib /= np.abs(dblpoles_contrib)
+            smplpoles_contrib /= np.abs(smplpoles_contrib)
 
         try:
-            dblpoles_contrib = reduce(
-                lambda x, y: x * ((z - y) / abs(z - y))**(-2),
-                self.dblpoles, 1)
-            smplpoles_contrib = reduce(
-                lambda x, y: x * ((z - y) / abs(z - y))**(-1),
-                self.smplpoles, 1)
+            zeros_contrib = np.prod(zeros_contrib)
+            dblpoles_contrib = np.prod(dblpoles_contrib**(-2))
+            smplpoles_contrib = np.prod(smplpoles_contrib**(-1))
 
         # If z is a pole return INF(nity)
         except ZeroDivisionError:
             return INF
 
-        return phase * zero_contrib * dblpoles_contrib * smplpoles_contrib
+        return phase * zeros_contrib * dblpoles_contrib * smplpoles_contrib
 
     def clear(self):
         self.zeros = []
@@ -108,7 +109,11 @@ class QuadraticDifferential(object):
 
     def integrate(self, trajectory):
         starting_point = trajectory[0]
-        sqrt_monodromy = Monodromy(self(starting_point))
+        if starting_point in self.zeros:
+            point = starting_point + 1e-5 * (trajectory[1] - starting_point)
+        else:
+            point = starting_point
+        sqrt_monodromy = Monodromy(self(point))
 
         value = 0
         for point in trajectory[1:]:

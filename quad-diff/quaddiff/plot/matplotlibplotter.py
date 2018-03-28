@@ -14,6 +14,7 @@ class MatplotlibPlotter(BasePlotter):
     colors = ['#000000']
     linestyles = 'solid'
     cmap = 'jet'
+    figsize = None
     xlim = [-5, 5]
     ylim = [-5, 5]
     zero_marker = 'o'
@@ -25,6 +26,7 @@ class MatplotlibPlotter(BasePlotter):
 
     def plot(self, lines, show=True, save=None, dir='.'):
         fig, ax = plt.subplots()
+
         ax.set_xlim(self.xlim[0], self.xlim[1])
         ax.set_ylim(self.ylim[0], self.ylim[1])
         self.plot_lines(lines, ax)
@@ -33,6 +35,7 @@ class MatplotlibPlotter(BasePlotter):
         self.plot_dblpoles()
         plt.legend()
         plt.axis(self.axis)
+
         if show:
             plt.show()
         if save is not None:
@@ -50,6 +53,7 @@ class MatplotlibPlotter(BasePlotter):
         ax.add_collection(collection)
 
     def animate(self, save=None, show=True):
+
         self.calculate_trajectories()
         frames = self.phases
         fig, ax = plt.subplots()
