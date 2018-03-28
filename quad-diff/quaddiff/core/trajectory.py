@@ -73,7 +73,7 @@ class Trajectory(object):
         condition1 = T1.imag * T2.imag <= 0
 
         # Crosses in between?
-        zero = np.divide(  # pylint: ignore=no-member
+        zero = np.divide(  # pylint: disable=no-member
             T2.imag * T1.real - T1.imag * T2.real,
             T2.imag - T1.imag,
             where=condition1)

@@ -8,6 +8,9 @@ from ..core.constants import *  # pylint: disable=wildcard-import
 
 class Analyzer(object):
     epsilon = 1e-3
+    factor = 3
+    close_2pole = 1e-2
+    max_step = .01
     distance_2limit = DISTANCE_2LIMIT
     stoping_distance = 1e-5
 
@@ -16,7 +19,7 @@ class Analyzer(object):
         self.critical_trajectories = {}
 
     def critical_trajectories_zero(self, zero, phase):
-        linearized_quaddiff = self.qd(zero, ignore_zero=True)
+        linearized_quaddiff = self.qd(zero, ignore_zero=True, normalize=True)
         phase_cbrt = cm.exp(cm.log(phase)/3)
         lqd_cbrt = cm.exp(cm.log(linearized_quaddiff)/3)
         unit_cbrt = cm.rect(1, 2 * cm.pi / 3.0)
@@ -24,8 +27,10 @@ class Analyzer(object):
         critical_phase = self.epsilon * unit_cbrt / (phase_cbrt * lqd_cbrt)
 
         solver = TrajectorySolver(self.qd)
-        solver.close_2pole = 1e-2
-        solver.max_step = .1
+        solver.close_2pole = self.close_2pole
+        solver.close_2zero = self.epsilon / self.factor
+        solver.max_step = self.max_step
+
 
         points = [
             zero + critical_phase * (unit_cbrt)**j
@@ -62,9 +67,11 @@ class Analyzer(object):
             for init_p, end_p in zip(init_points, end_points)]
 
         critical = {}
+        solved = []
         while True:
-            for t1, t2 in trajectories:
-                pass
+            for i in range(3):
+                t1, t2 = trajectories[i]
+                if t1.converges(zero, distance_2limit=self.distance_2limit)
 
             break
 
