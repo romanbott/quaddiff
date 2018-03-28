@@ -50,21 +50,20 @@ class AnalyzerTests(unittest.TestCase):
 
     def test_saddle_trajectories_zero_large_epsilon(self):
 
-        self.qd.add_zero(0.0)
-        self.qd.add_zero(1.0+1j)
-        self.qd.add_zero(1j)
-        #self.qd.add_zero(2.5+2.5j)
+        zero1 = 0
+        zero2 = 1+1j
+        zero3 = 5j
+        self.qd.zeros = [zero1, zero2, zero3]
         self.analyzer.epsilon = 0.001
         self.analyzer.max_step = 0.01
         self.analyzer.factor = 2
-        curva = [t*(1j+1) for t in np.linspace(0.00000001, .9999999, 50000)]
-        #curva = [1j+t for t in np.linspace(0.00000001, .9999999, 50000)]
-        phase = self.qd.integrate(curva)
+        integration_curve = qd.Trajectory([zero2+.0000001j, zero3-0.0000001j])
+        phase = self.qd.integrate(integration_curve.refine(max_distance=.00003))
         phase /= abs(phase)
         phase = phase**-2
         print(phase)
         self.qd.phase = phase
-        phase2 = self.qd.integrate(curva)
+        phase2 = self.qd.integrate(integration_curve.refine(max_distance=.00003))
         phase2/= abs(phase2)
         phase2 = phase2**-2
         print((phase2))

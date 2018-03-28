@@ -16,5 +16,7 @@ LIM = 30
 # Simplification
 DISTANCE_2LINE = 0.03
 MIN_DISTANCE = 0.01
+#Refining
+MAX_DISTANCE = 0.001
 # Convergence
 DISTANCE_2LIMIT = CLOSE_2POLE

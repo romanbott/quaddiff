@@ -71,7 +71,8 @@ class Analyzer(object):
         while True:
             for i in range(3):
                 t1, t2 = trajectories[i]
-                if t1.converges(zero, distance_2limit=self.distance_2limit)
+                if t1.converges(zero, distance_2limit=self.distance_2limit):
+                    pass
 
             break
 
