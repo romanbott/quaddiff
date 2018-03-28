@@ -22,6 +22,8 @@ class Monodromy(object):
         self.phase += arg_change
 
     def __call__(self, z):
+        if z == 0:
+            return 0
         self.update(z)
         if (self.phase - cm.pi) % (4 * cm.pi) < (2 * cm.pi):
             factor = -1

@@ -109,7 +109,7 @@ class MatplotlibPlotterTests(unittest.TestCase):
 
         self.plot.get_phase_plot(1j, save='phase_plot', show=False)
 
-    # @unittest.skip("")
+    @unittest.skip("")
     def test_animate(self):
         random = np.random.uniform(-5, 5, size=[8, 2])
         self.qd.add_zero(complex(*random[0]))

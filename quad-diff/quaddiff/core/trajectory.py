@@ -4,10 +4,13 @@ import sys
 import numpy as np
 import cmath as cm
 import logging
+from tqdm import tqdm
+from multiprocessing import Pool
 from scipy.integrate import solve_ivp
 
 from ..utils import simplify_trajectory
 from .monodromy import Monodromy
+from ..utils import MethodProxy
 from .constants import *
 
 
@@ -16,6 +19,12 @@ class Trajectory(object):
     def __init__(self, trajectory, basepoint=None):
         self.trajectory = trajectory
         self.basepoint = basepoint
+
+    def __repr__(self):
+        msg = 'Trayectory object based at {}\n'
+        msg = msg.format(self.basepoint)
+        msg += '\t path : {}'.format(str(self.trajectory))
+        return msg
 
     def simplify(self, distance_2line=DISTANCE_2LINE, min_distance=MIN_DISTANCE):
         simplified = simplify_trajectory(
@@ -126,10 +135,28 @@ class TrajectorySolver(object):
             positive_trajectory[1:]
         return Trajectory(trajectory, point)
 
+    def parallel_calculate(self, args, progressbar=True):
+        pickable_method = MethodProxy(self, self._calculate)
+
+        pool = Pool()
+        if progressbar:
+            iterable = tqdm(args)
+        else:
+            iterable = args 
+
+        trajectories = pool.imap(pickable_method, iterable)
+        pool.close()
+        pool.join()
+
+        result = {}
+        for arg, trajectory in zip(args, trajectories):
+            result[arg] = trajectory
+        return result
+
     def _calculate(self, arg):
         point, phase = arg
         trajectory = self.calculate(point, phase=phase)
-        return (arg, trajectory)
+        return trajectory
 
 
 def calculate_ray(

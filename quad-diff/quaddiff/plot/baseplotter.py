@@ -5,12 +5,9 @@ import cmath as cm
 import logging
 import json
 import os
-from tqdm import tqdm
-from multiprocessing import Pool
 
 from ..core.constants import *
 
-from ..utils import MethodProxy
 from ..core.trajectory import TrajectorySolver
 
 
@@ -66,23 +63,10 @@ class BasePlotter(object):
                      for phase in self.phases
                      if (point, phase) not in self.trajectories]
 
-        pickable_method = MethodProxy(self.solver, self.solver._calculate)
-
-        logging.info('Computing trayectories')
-        pool = Pool()
-
-        if progressbar:
-            iterable = tqdm(arguments)
-        else:
-            iterable = arguments
-
-        results = pool.imap(pickable_method, iterable)
-        pool.close()
-        pool.join()
-
-        for argument, trajectory in zip(arguments, results):
-            self.trajectories[argument] = trajectory
-
+        new_trajectories = self.solver.parallel_calculate(
+            arguments,
+            progressbar=progressbar)
+        self.trajectories.update(new_trajectories)
 
     def get_trajectories(self, phase=None, plotpoint=None, simplify=True):
         if plotpoint is not None:
