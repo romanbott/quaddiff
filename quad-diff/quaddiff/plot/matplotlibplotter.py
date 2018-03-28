@@ -19,6 +19,7 @@ class MatplotlibPlotter(BasePlotter):
     smplpole_marker = 'x'
     dblpole_marker = '*'
     axis = 'off'
+    animation_interval = 200
     format = 'png'
 
     def plot(self, lines, show=True, save=None, dir='.'):
@@ -64,7 +65,8 @@ class MatplotlibPlotter(BasePlotter):
             plt.legend()
             plt.axis(self.axis)
 
-        anim = FuncAnimation(fig, update, frames=frames, interval=200)
+        interval = self.animation_interval
+        anim = FuncAnimation(fig, update, frames=frames, interval=interval)
 
         if save is not None:
             anim.save(save + '.gif', dpi=80, writer='imagemagick')
