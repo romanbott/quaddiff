@@ -2,13 +2,9 @@
 import cmath as cm
 import numpy as np
 
-from .core.quaddiff import QuadraticDifferential
-from .core.monodromy import Monodromy
-from .core.trajectory import TrajectorySolver
-from .core.trajectory import Trajectory
-from .plot.baseplotter import BasePlotter
-from .analyzer import Analyzer
-from .plot import *
+from .core import *  # pylint: disable=wildcard-import
+from .analyzer import *  # pylint: disable=wildcard-import
+from .plot import *  # pylint: disable=wildcard-import
 from .utils import INF
 
 

@@ -3,15 +3,16 @@
 
 import os
 import json
+import numpy as np
 from cmath import *
 from constants import *
 
+from .monodromy import  Monodromy
 from ..utils import INF
 
 
 class QuadraticDifferential(object):
     """Esta clase codifica una diferencial cuadratica en el plano"""
-    sensitivity = CLOSE_2POLE
 
     def __init__(self, quad=None, phase=None):
         if quad is not None:
@@ -89,25 +90,65 @@ class QuadraticDifferential(object):
     def add_smplpole(self, z):
         self.smplpoles.append(complex(z))
 
-    def _close_2dblpole(self, z, sensitivity=None):
-        if sensitivity is None:
-            sensitivity = self.sensitivity
+    def _close_2dblpole(self, z, sensitivity):
         for x in self.dblpoles:
-            if abs(z-x) < self.sensitivity:
+            if abs(z-x) < sensitivity:
                 return True
         return False
 
-    def _close_2smplpole(self, z, sensitivity=None):
-        if sensitivity is None:
-            sensitivity = self.sensitivity
+    def _close_2smplpole(self, z, sensitivity):
         for x in self.smplpoles:
             if abs(z-x) < sensitivity:
                 return True
         return False
 
-    def close_2pole(self, z, sensitivity=None):
+    def close_2pole(self, z, sensitivity):
         return self._close_2smplpole(z, sensitivity=sensitivity) | \
             self._close_2dblpole(z, sensitivity=sensitivity)
+
+    def integrate(self, trajectory):
+        starting_point = trajectory[0]
+        sqrt_monodromy = Monodromy(self(starting_point))
+
+        value = 0
+        for point in trajectory[1:]:
+            dz = point - starting_point
+
+            quad_value0 = sqrt_monodromy(self(starting_point))
+            quad_value1 = sqrt_monodromy(self(point))
+            avg_quad_value = (quad_value0 + quad_value1) / 2
+
+            value += dz * avg_quad_value
+            starting_point = point
+        return value
+
+    def intrinsic_length(self, trajectory):
+        segment_starts = np.array(trajectory[:-1])
+        segment_ends = np.array(trajectory[1:])
+
+        starts_value = sqrt(abs(self(segment_starts)))
+        ends_value = sqrt(abs(self(segment_ends)))
+
+        average_value = (starts_value + ends_value) / 2
+
+        dl = abs(segment_ends - segment_starts)
+        integral_contributions = average_value * dl
+
+        return np.sum(integral_contributions)
+
+    def intrinsic_length_2(self, trajectory):
+        starting_point = trajectory[0]
+        value = 0
+        for point in trajectory[1:]:
+            dl = abs(point - starting_point)
+
+            quad_value0 = sqrt(abs(self(starting_point)))
+            quad_value1 = sqrt(abs(self(point)))
+            avg_quad_value = (quad_value0 + quad_value1) / 2
+
+            value += dl * avg_quad_value
+            starting_point = point
+        return value
 
     def save(self, path, name='quad_diff'):
         fname = os.path.join(path, name + '.json')

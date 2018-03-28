@@ -3,6 +3,7 @@
 import sys
 import numpy as np
 import cmath as cm
+import logging
 from scipy.integrate import solve_ivp
 
 from ..utils import simplify_trajectory
@@ -15,9 +16,8 @@ class Trajectory(object):
     min_distance = MIN_DISTANCE
     distance_2limit = DISTANCE_2LIMIT
 
-    def __init__(self, trajectory, basepoint):
+    def __init__(self, trajectory):
         self.trajectory = trajectory
-        self.basepoint = basepoint
 
     def simplify(self):
         simplified = simplify_trajectory(
@@ -90,29 +90,43 @@ class Trajectory(object):
 class TrajectorySolver(object):
     """clase que representa una trayectoria y los metodos para calcularla."""
 
-    parameters = {
-        'max_time': MAX_TIME,
-        'velocity_scale': VELOCITY_SCALE,
-        'lim': LIM,
-        'max_step': MAX_STEP,
-        'close_2pole': CLOSE_2POLE,
-        'center': 0j}
+    max_time = MAX_TIME
+    velocity_scale = VELOCITY_SCALE
+    lim = LIM
+    max_step = MAX_STEP
+    close_2pole = CLOSE_2POLE
+    close_2start = CLOSE_2START
+    center = 0j
 
     def __init__(self, quad):
-        self.qd = quad
+        self.qd = quad  # pylint: disable=invalid-name
+
+    def get_parameters(self):
+        parameters = {
+            'max_time': self.max_time,
+            'max_step': self.max_step,
+            'velocity_scale': self.velocity_scale,
+            'lim': self.lim,
+            'close_2pole': self.close_2pole,
+            'close_2start': self.close_2start,
+            'center': self.center}
+        return parameters
 
     def calculate(self, point, phase=None):
         """Calculate trajectory."""
         if phase is None:
             phase = self.qd.phase
 
-        positive_trajectory = calculate_ray(
-            point, self.qd, parameters=self.parameters, phase=phase)
-        negative_trajectory = calculate_ray(
-            point, self.qd, sign=-1, parameters=self.parameters, phase=phase)
+        parameters = self.get_parameters()
 
-        trajectory = list(reversed(negative_trajectory)) + positive_trajectory[1:]
-        return Trajectory(trajectory, point)
+        positive_trajectory = calculate_ray(
+            point, self.qd, parameters=parameters, phase=phase)
+        negative_trajectory = calculate_ray(
+            point, self.qd, sign=-1, parameters=parameters, phase=phase)
+
+        trajectory = list(reversed(negative_trajectory)) + \
+            positive_trajectory[1:]
+        return Trajectory(trajectory)
 
     def _calculate(self, arg):
         point, phase = arg
@@ -123,36 +137,24 @@ def calculate_ray(
         starting_point,
         quad,
         sign=1,
-        parameters={},
+        parameters=None,
         phase=None):
+
     """Calculate a ray solution to the Quadratic Differential."""
-    max_time = parameters.get('max_time', MAX_TIME)
-    max_step = parameters.get('max_step', MAX_STEP)
-    velocity_scale = parameters.get('velocity_scale', VELOCITY_SCALE)
-    lim = parameters.get('lim', LIM)
-    center = parameters.get('center', 0j)
-    pole_sensitivity = parameters.get('close_2pole', CLOSE_2POLE)
-
-    # Monodromy
-    sqrt_monodromy = Monodromy(quad(starting_point))
-
-    # Iteration counter
-    iteration = 0
-
-    # Reference points
-    initial = starting_point
-    last = starting_point
-
-    # Trajectory points
-    trajectory = []
-
     # Check for new phase
     if phase is None:
         phase = quad.phase
 
+    # Check for parameters
+    if parameters is None:
+        parameters = {}
+
+    # Monodromy
+    sqrt_monodromy = Monodromy(quad(starting_point))
+
     def vector_field(t, y):  # pylint: disable=invalid-name
-        real, img = y
-        comp = complex(real, img)
+        velocity_scale = parameters.get('velocity_scale', VELOCITY_SCALE)
+        comp = complex(*y)
         value = sqrt_monodromy(quad(comp, phase=phase).conjugate())
         value *= velocity_scale
         if abs(comp) > 1:
@@ -162,36 +164,41 @@ def calculate_ray(
 
     # Termination events
     def far_away(t, y):  # pylint: disable=invalid-name
+        far = parameters.get('lim', LIM)
+        center = parameters.get('center', 0j)
         comp = complex(*y)
-        if abs(comp - center) > lim:
+        if abs(comp - center) > far:
             return 0
         else:
             return 1
     far_away.terminal = True
 
     def close_2pole(t, y):  # pylint: disable=invalid-name
+        close = parameters.get('close_2pole', CLOSE_2POLE)
         comp = complex(*y)
-        if quad.close_2pole(comp, pole_sensitivity):
+        if quad.close_2pole(comp, sensitivity=close):
             return 0
         else:
             return 1
     close_2pole.terminal = True
 
-    def close_2start(t, y): # pylint: disable=invalid-name
+    def close_2start(t, y):  # pylint: disable=invalid-name
+        close = parameters.get('close_2start', CLOSE_2START)
         comp = complex(*y)
-        if (abs(comp - starting_point) <= CLOSE_2START) and t > 100:
+        if (abs(comp - starting_point) <= close) and t > 100:
             return 0
         else:
             return 1
     close_2start.terminal = True
 
     # Calculate solution with solve_ivp
+    max_time = parameters.get('max_time', MAX_TIME)
+    max_step = parameters.get('max_step', MAX_STEP)
     solution = solve_ivp(
         vector_field,
         (0, max_time),
-        np.array([initial.real, initial.imag]),
+        np.array([starting_point.real, starting_point.imag]),
         events=[far_away, close_2pole, close_2start],
         max_step=max_step)
 
-    solution_complex_list = [complex(*point) for point in solution['y'].T]
-    return solution_complex_list
+    return [complex(*point) for point in solution['y'].T]

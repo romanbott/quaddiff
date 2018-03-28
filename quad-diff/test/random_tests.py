@@ -11,7 +11,6 @@ sys.path.insert(
 
 import quaddiff as qd  # pylint: disable=wrong-import-position
 import quaddiff.core.constants as constants
-from quaddiff.plot.matplotlibplotter import MatplotlibPlotter
 
 
 class RandomTests(unittest.TestCase):
@@ -37,7 +36,7 @@ class RandomTests(unittest.TestCase):
         trajectory_list = [complex(2*x, 3*x) for x in np.linspace(0, 4, N)]
         trajectory = qd.Trajectory(trajectory_list)
 
-        for x,y in zip(trajectory_list, trajectory):
+        for x, y in zip(trajectory_list, trajectory):
             self.assertEqual(x, y)
 
     def test_intersection(self):
@@ -59,7 +58,26 @@ class RandomTests(unittest.TestCase):
         self.assertFalse(trajectory.intersects(trajectory3))
         self.assertFalse(trajectory.intersects(trajectory4))
 
+    def test_integration(self):
+        N = 100
+        quad = qd.QuadraticDifferential()
+        trajectory = qd.Trajectory(
+            [complex(2*x, 3*x) for x in np.linspace(0, 1, N)])
 
+        integral = quad.integrate(trajectory)
+        self.assertEqual(integral, 2 + 3j)
+
+    def test_intrinsic_length(self):
+        N = 100
+        quad = qd.QuadraticDifferential()
+        trajectory = qd.Trajectory(
+            [complex(2*x, 3*x) for x in np.linspace(0, 1, N)])
+
+        lenght = quad.intrinsic_length(trajectory)
+        self.assertEqual(round(abs(lenght - abs(2 + 3j)), 3), 0)
+
+        length2 = quad.intrinsic_length_2(trajectory)
+        self.assertEqual(round(abs(length2 - abs(2 + 3j)), 3), 0)
 
 
 if __name__ == '__main__':
