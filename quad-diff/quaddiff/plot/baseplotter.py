@@ -71,32 +71,18 @@ class BasePlotter(object):
         logging.info('Computing trayectories')
         pool = Pool()
 
-        results = {}
-        try:
-            if progressbar:
-                pbar = tqdm(total=len(arguments))
+        if progressbar:
+            iterable = tqdm(arguments)
+        else:
+            iterable = arguments
 
-                def callback(result):
-                    argument, trajectory = result[0]
-                    results[argument] = trajectory
-                    pbar.update(1)
-            else:
-                def callback(result):
-                    argument, trajectory = result[0]
-                    results[argument] = trajectory
+        results = pool.imap(pickable_method, iterable)
+        pool.close()
+        pool.join()
 
-            for argument in arguments:
-                pool.map_async(pickable_method, (argument,), callback=callback).get(99999999)
+        for argument, trajectory in zip(arguments, results):
+            self.trajectories[argument] = trajectory
 
-            pool.close()
-            pool.join()
-            if progressbar:
-                pbar.close()
-
-        except KeyboardInterrupt:
-            pool.terminate()
-
-        self.trajectories.update(results)
 
     def get_trajectories(self, phase=None, plotpoint=None, simplify=True):
         if plotpoint is not None:

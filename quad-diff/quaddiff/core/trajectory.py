@@ -12,7 +12,7 @@ from .constants import *
 
 
 class Trajectory(object):
-    
+
     def __init__(self, trajectory, basepoint=None):
         self.trajectory = trajectory
         self.basepoint = basepoint
@@ -92,6 +92,7 @@ class TrajectorySolver(object):
     max_step = MAX_STEP
     close_2pole = CLOSE_2POLE
     close_2start = CLOSE_2START
+    close_2zero = CLOSE_2ZERO
     center = 0j
 
     def __init__(self, quad):
@@ -105,6 +106,7 @@ class TrajectorySolver(object):
             'lim': self.lim,
             'close_2pole': self.close_2pole,
             'close_2start': self.close_2start,
+            'close_2zero': self.close_2zero,
             'center': self.center}
         return parameters
 
@@ -149,8 +151,8 @@ def calculate_ray(
     # Monodromy
     sqrt_monodromy = Monodromy(quad(starting_point))
 
+    velocity_scale = parameters.get('velocity_scale', VELOCITY_SCALE)
     def vector_field(t, y):  # pylint: disable=invalid-name
-        velocity_scale = parameters.get('velocity_scale', VELOCITY_SCALE)
         comp = complex(*y)
         value = sqrt_monodromy(quad(comp, phase=phase, normalize=True).conjugate())
         value *= velocity_scale
@@ -160,9 +162,9 @@ def calculate_ray(
         return value.real, value.imag
 
     # Termination events
+    far = parameters.get('lim', LIM)
+    center = parameters.get('center', 0j)
     def far_away(t, y):  # pylint: disable=invalid-name
-        far = parameters.get('lim', LIM)
-        center = parameters.get('center', 0j)
         comp = complex(*y)
         if abs(comp - center) > far:
             return 0
@@ -170,23 +172,32 @@ def calculate_ray(
             return 1
     far_away.terminal = True
 
+    close = parameters.get('close_2pole', CLOSE_2POLE)
     def close_2pole(t, y):  # pylint: disable=invalid-name
-        close = parameters.get('close_2pole', CLOSE_2POLE)
         comp = complex(*y)
-        if quad.close_2pole(comp, sensitivity=close):
+        if quad.close_2pole(comp, close):
             return 0
         else:
             return 1
     close_2pole.terminal = True
 
+    close = parameters.get('close_2start', CLOSE_2START)
     def close_2start(t, y):  # pylint: disable=invalid-name
-        close = parameters.get('close_2start', CLOSE_2START)
         comp = complex(*y)
         if (abs(comp - starting_point) <= close) and t > 100:
             return 0
         else:
             return 1
     close_2start.terminal = True
+
+    close = parameters.get('close_2zero', CLOSE_2ZERO)
+    def close_2zero(t, y):
+        comp = complex(*y)
+        if quad.close_2zero(comp, close):
+            return 0
+        else:
+            return 1
+        close_2pole.terminal = True
 
     # Calculate solution with solve_ivp
     max_time = parameters.get('max_time', MAX_TIME)
@@ -195,7 +206,7 @@ def calculate_ray(
         vector_field,
         (0, max_time),
         np.array([starting_point.real, starting_point.imag]),
-        events=[far_away, close_2pole, close_2start],
+        events=[far_away, close_2pole, close_2start, close_2zero],
         max_step=max_step)
 
     return [complex(*point) for point in solution['y'].T]

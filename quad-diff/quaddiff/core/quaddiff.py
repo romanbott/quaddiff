@@ -121,8 +121,14 @@ class QuadraticDifferential(object):
         return False
 
     def close_2pole(self, z, sensitivity):
-        return self._close_2smplpole(z, sensitivity=sensitivity) | \
-            self._close_2dblpole(z, sensitivity=sensitivity)
+        return self._close_2smplpole(z, sensitivity) | \
+            self._close_2dblpole(z, sensitivity)
+
+    def close_2zero(self, z, sensitivity):
+        for x in self.zeros:
+            if abs(z - x) < sensitivity:
+                return True
+        return False
 
     def integrate(self, trajectory):
         starting_point = trajectory[0]

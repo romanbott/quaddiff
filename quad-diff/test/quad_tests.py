@@ -36,11 +36,12 @@ class QuadraticDifferentialTests(unittest.TestCase):
     def test_proximity(self):
         self.qd.add_smplpole(1)
         self.qd.add_dblpole(-1)
-        self.assertFalse(self.qd.close_2pole(2))
-        self.assertTrue(self.qd.close_2pole(1.001))
-        self.assertTrue(self.qd.close_2pole(-1.001))
+        close = constants.CLOSE_2POLE
+        self.assertFalse(self.qd.close_2pole(2, close))
+        self.assertTrue(self.qd.close_2pole(1.001, close))
+        self.assertTrue(self.qd.close_2pole(-1.001, close))
         self.qd.sensitivity = 1
-        self.assertTrue(self.qd.close_2pole(1))
+        self.assertTrue(self.qd.close_2pole(1, close))
 
     def test_phase_change(self):
         self.qd.add_zero(1)

@@ -8,6 +8,9 @@ from ..core.constants import *  # pylint: disable=wildcard-import
 
 class Analyzer(object):
     epsilon = 1e-3
+    factor = 3
+    close_2pole = 1e-2
+    max_step = .1
     distance_2limit = DISTANCE_2LIMIT
 
     def __init__(self, quad):
@@ -23,8 +26,9 @@ class Analyzer(object):
         critical_phase = self.epsilon * unit_cbrt / (phase_cbrt * lqd_cbrt)
 
         solver = TrajectorySolver(self.qd)
-        solver.close_2pole = 1e-2
-        solver.max_step = .1
+        solver.close_2pole = self.close_2pole
+        solver.close_2zero = self.epsilon / self.factor
+        solver.max_step = self.max_step
 
         points = [
             zero + critical_phase * (unit_cbrt)**j
