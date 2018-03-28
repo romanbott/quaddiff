@@ -75,9 +75,13 @@ class BasePlotter(object):
             iterable = arguments
 
         pool = Pool()
-        results = pool.imap(pickable_method, iterable)
-        pool.close()
-        pool.join()
+        try:
+            results = pool.imap(pickable_method, iterable)
+        except KeyboardInterrupt:
+            pool.terminate()
+        finally:
+            pool.close()
+            pool.join()
 
         for arg, res in zip(arguments, results):
             self.trajectories[arg] = res

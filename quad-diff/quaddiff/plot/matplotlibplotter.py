@@ -7,9 +7,10 @@ from matplotlib.animation import FuncAnimation
 
 from .baseplotter import BasePlotter
 
+
 class MatplotlibPlotter(BasePlotter):
     name = 'Matplotlib'
-    linewidths = 1
+    linewidths = .1
     colors = ['#000000']
     linestyles = 'solid'
     cmap = 'jet'
@@ -35,7 +36,7 @@ class MatplotlibPlotter(BasePlotter):
         if show:
             plt.show()
         if save is not None:
-            path = os.path.join(dir,  save)
+            path = os.path.join(dir, save)
             plt.savefig('{}.{}'.format(path, self.format))
         plt.close()
 
