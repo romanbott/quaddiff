@@ -50,7 +50,7 @@ class QuadraticDifferential(object):
     def size(self):
         return len(self.zeros) + len(self.dblpoles) + len(self.smplpoles)
 
-    def __call__(self, z, ignore_zero=False, phase=None, normalize=True):
+    def __call__(self, z, ignore_zero=False, phase=None, normalize=False):
         # Check if any zeros or poles have been defined
         if self.size == 0:
             msg = "Quadratic Differential is empty:\n {}".format(self)
@@ -92,6 +92,7 @@ class QuadraticDifferential(object):
         # If z is a pole return INF(nity)
         except ZeroDivisionError:
             return INF
+        #if not normalize: value *= 100
 
         return value
 

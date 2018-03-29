@@ -53,12 +53,14 @@ class AnalyzerTests(unittest.TestCase):
         zero1 = 0
         zero2 = 1+1j
         zero3 = 5j
+        self.qd.add_dblpole(0.5+2j)
         self.qd.zeros = [zero1, zero2, zero3]
         self.analyzer.epsilon = 0.001
-        self.analyzer.max_step = 0.01
+        self.analyzer.max_step = 0.1
         self.analyzer.factor = 2
-        integration_curve = qd.Trajectory([zero2+.0000001j, zero3-0.0000001j])
-        phase = self.qd.integrate(integration_curve.refine(max_distance=.00003))
+        integration_curve = qd.Trajectory([zero2, zero3-0.0000001j])
+        phase = self.qd.integrate(integration_curve.refine(max_distance=.003))
+        print(phase)
         phase /= abs(phase)
         phase = phase**-2
         print(phase)
