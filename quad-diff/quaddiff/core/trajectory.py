@@ -1,11 +1,11 @@
 """Trajectory Module."""
 
 import sys
-import numpy as np
-import cmath as cm
-import logging
-from tqdm import tqdm
 from multiprocessing import Pool
+import logging
+import cmath as cm
+import numpy as np
+from tqdm import tqdm
 from scipy.integrate import solve_ivp
 
 from ..utils import simplify_trajectory
@@ -150,13 +150,18 @@ class TrajectorySolver(object):
         return Trajectory(trajectory, point)
 
     def parallel_calculate(self, args, progressbar=True):
+        """
+        Computes several trajectories in parallel
+        solver.parallel_calculate( args)
+        where args is a list [(point, phase)]
+        """
         pickable_method = MethodProxy(self, self._calculate)
 
         pool = Pool()
         if progressbar:
             iterable = tqdm(args)
         else:
-            iterable = args 
+            iterable = args
 
         trajectories = pool.imap(pickable_method, iterable)
         pool.close()
@@ -170,7 +175,8 @@ class TrajectorySolver(object):
     def _calculate(self, arg):
         point, phase = arg
         trajectory = self.calculate(point, phase=phase)
-        return (arg, trajectory)
+        #return (arg, trajectory)
+        return trajectory
 
 
 def calculate_ray(
