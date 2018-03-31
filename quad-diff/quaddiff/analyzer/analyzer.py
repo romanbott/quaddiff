@@ -7,6 +7,10 @@ from ..core.constants import *  # pylint: disable=wildcard-import
 
 
 class Analyzer(object):
+    """
+    Class for finding critical trajectories and other sutff
+    Has methods critical_trajectories_zero, etc
+    """
     epsilon = 1e-3
     factor = 3
     close_2pole = 1e-2
@@ -19,31 +23,22 @@ class Analyzer(object):
         self.critical_trajectories = {}
 
     def critical_trajectories_zero(self, zero, phase):
-        linearized_quaddiff = self.qd(zero, ignore_zero=True, normalize=True)
-        phase_cbrt = cm.exp(cm.log(phase)/3)
-        lqd_cbrt = cm.exp(cm.log(linearized_quaddiff)/3)
-        unit_cbrt = cm.rect(1, 2 * cm.pi / 3.0)
-
-        critical_phase = self.epsilon * unit_cbrt / (phase_cbrt * lqd_cbrt)
+        """Computes critical trajectories for the given zero"""
 
         solver = TrajectorySolver(self.qd)
         solver.close_2pole = self.close_2pole
         solver.close_2zero = self.epsilon / self.factor
         solver.max_step = self.max_step
 
+        new_trajectories = solver.parallel_calculate(
+            self.args_critical_trajectories(zero, phase))
+        critical_trajectories = {}
+        critical_trajectories.update(new_trajectories)
 
-        points = [
-            zero + critical_phase * (unit_cbrt)**j
-            for j in range(3)]
-
-        critical_trajectories = {
-            (point, phase): solver.calculate(point, phase)
-            for point in points}
-
-        mini = 30
-        for pole in self.qd.dblpoles:
-            for traj in critical_trajectories.values():
-                mini = min(mini, abs(traj[0] - pole), abs(traj[-1] - pole))
+        #mini = 30
+        #for pole in self.qd.dblpoles:
+        #    for traj in critical_trajectories.values():
+        #        mini = min(mini, abs(traj[0] - pole), abs(traj[-1] - pole))
 
         return critical_trajectories
 
@@ -60,7 +55,7 @@ class Analyzer(object):
         init_points = [zero + cm.rect(self.epsilon, p1) for p1, p2 in phase_intervals]
         end_points = [zero + cm.rect(self.epsilon, p2) for p1, p2 in phase_intervals]
         init_traj= solver.parallel_calculate(
-            [(point, phase) for point in initial_points],
+            [(point, phase) for point in init_points],
             progressbar=False)
         trajectories = [
             [init_traj[init_p], init_traj[end_p]]
@@ -73,16 +68,16 @@ class Analyzer(object):
             for i in unsolved:
                 t1, t2 = trajectories[i]
                 if t1.converges(zero, distance_2limit=self.distance_2limit):
-                    solved.remove(i)
+                    unsolved.remove(i)
                     critical[(t1.basepoint, phase)] = t1
                 elif t2.converges(zero, distance_2limit=self.distance_2limit):
-                    solved.remove(i)
+                    unsolved.remove(i)
                     critical[(t2.basepoint, phase)] = t2
                 if abs(phase_intervals[i][0] - phase_intervals[i][1]) <= self.stoping_distance:
-                    solved.remove(i)
+                    unsolved.remove(i)
                     critical[(t1.basepoint, phase)] = t1
 
-            if len(solved) == 0:
+            if len(unsolved) == 0:
                 break
 
             new_args = []
@@ -102,23 +97,48 @@ class Analyzer(object):
                     trajectories[i][1] = middle_trajectory
                     phase_intervals[i][1] = (phase_intervals[i]/2 +  phase_intervals[i][1])/2
 
-        return solved
+        return unsolved
 
     def critical_trajectories_zeros_2(self, phase):
-        trayectories = {}
+        trajectories = {}
         for zero in self.qd.zeros:
             new_trajectories = self.critical_trajectories_zero_2(zero, phase)
-            trayectories.update(new_trajectories)
+            trajectories.update(new_trajectories)
 
         return trajectories
 
     def critical_trajectories_zeros(self, phase):
+        """Computes critical trajectories for all zeros"""
+
+        solver = TrajectorySolver(self.qd)
+        solver.close_2pole = self.close_2pole
+        solver.close_2zero = self.epsilon / self.factor
+        solver.max_step = self.max_step
         trayectories = {}
+        args = []
         for zero in self.qd.zeros:
-            new_trajectories = self.critical_trajectories_zero(zero, phase)
-            trayectories.update(new_trajectories)
+            args += self.args_critical_trajectories(zero, phase)
+        new_trajectories = solver.parallel_calculate(args)
+        trayectories.update(new_trajectories)
 
         return trayectories
+
+    def args_critical_trajectories(self, zero, phase):
+        """Returns the position of points to plot critical trajectories"""
+
+        linearized_quaddiff = self.qd(zero, ignore_zero=True, normalize=True)
+        phase_cbrt = cm.exp(cm.log(phase)/3)
+        lqd_cbrt = cm.exp(cm.log(linearized_quaddiff)/3)
+        unit_cbrt = cm.rect(1, 2 * cm.pi / 3.0)
+
+        critical_phase = self.epsilon * unit_cbrt / (phase_cbrt * lqd_cbrt)
+
+        points = [
+            zero + critical_phase * (unit_cbrt)**j
+            for j in range(3)]
+        arguments = [(point, phase)
+                     for point in points]
+        return arguments
 
 def same_zone(trajectory1, trajectory2, close=0.01):
     first1 = trajectory1[0]
@@ -135,8 +155,5 @@ def same_zone(trajectory1, trajectory2, close=0.01):
         return l1l2
     elif f1l2:
         return l1f2
-    else:
-        return False
-
-
+    return False
 
