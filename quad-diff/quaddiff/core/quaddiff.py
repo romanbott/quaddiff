@@ -5,7 +5,7 @@ import os
 import json
 import numpy as np
 from cmath import *
-from constants import *
+from .constants import *
 
 from .monodromy import  Monodromy
 from ..utils import INF
@@ -129,14 +129,14 @@ class QuadraticDifferential(object):
             point = starting_point + 1e-5 * (trajectory[1] - starting_point)
         else:
             point = starting_point
-        sqrt_monodromy = Monodromy(self(point))
+        sqrt_monodromy = Monodromy(self(point, phase=1))
 
         value = 0
         for point in trajectory[1:]:
             dz = point - starting_point
 
-            quad_value0 = sqrt_monodromy(self(starting_point))
-            quad_value1 = sqrt_monodromy(self(point))
+            quad_value0 = sqrt_monodromy(self(starting_point, phase=1))
+            quad_value1 = sqrt_monodromy(self(point, phase=1))
             avg_quad_value = (quad_value0 + quad_value1) / 2
 
             value += dz * avg_quad_value

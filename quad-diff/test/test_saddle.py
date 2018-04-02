@@ -1,5 +1,4 @@
 import unittest
-
 import os
 import sys
 import time
@@ -14,6 +13,7 @@ import quaddiff.core.constants as constants  # pylint: disable=wrong-import-posi
 
 
 class AnalyzerTests(unittest.TestCase):
+    """Analyzer test class"""
     def setUp(self):
         self.qd = qd.QuadraticDifferential()
         self.analyzer = qd.Analyzer(self.qd)
@@ -37,44 +37,41 @@ class AnalyzerTests(unittest.TestCase):
         plotter = qd.MatplotlibPlotter(self.qd)
         plotter.plot(critical_trajectories)
 
-    @unittest.skip("")
-    def test_critical_trajectories_zero_large_epsilon(self):
 
-        self.qd.add_zero(-1.0)
-        self.qd.add_zero(1.0)
-        self.analyzer.epsilon = 0.1
-        critical_trajectories = self.analyzer.critical_trajectories_zeros(-1)
-
-        plotter = qd.MatplotlibPlotter(self.qd)
-        plotter.plot(critical_trajectories)
-
-    def test_saddle_trajectories_zero_large_epsilon(self):
+    def test_saddle_trajectories(self):
 
         zero1 = 0
         zero2 = 1+1j
         zero3 = 5j
-        self.qd.add_dblpole(0.5+2j)
-        self.qd.zeros = [zero1, zero2, zero3]
+        self.qd.dblpoles = [0.5+2j, -3j-2, -4j+5]
+        pole = -0.5-0.5j
+        self.qd.add_smplpole(pole)
+        self.qd.add_dblpole(pole+3j)
+        self.qd.zeros = [zero1, zero2, zero3, zero2+zero3, -zero3]
+        #self.qd.zeros = [zero1]
         self.analyzer.epsilon = 0.001
-        self.analyzer.max_step = 0.1
+        self.analyzer.max_step = 0.01
         self.analyzer.factor = 2
-        integration_curve = qd.Trajectory([zero2, zero3-0.0000001j])
-        phase = self.qd.integrate(integration_curve.refine(max_distance=.003))
-        print(phase)
-        phase /= abs(phase)
-        phase = phase**-2
-        print(phase)
-        self.qd.phase = phase
-        phase2 = self.qd.integrate(integration_curve.refine(max_distance=.00003))
-        phase2/= abs(phase2)
-        phase2 = phase2**-2
-        print((phase2))
+        #integration_curve = qd.Trajectory([zero1, pole])
+        #phase = self.qd.integrate(integration_curve.refine(max_distance=.000001))
+        #print(phase)
+        #phase /= abs(phase)
+        #phase = phase**-2
+        #print(phase)
+        #self.qd.phase = phase
+        #phase2 = self.qd.integrate(integration_curve.refine(max_distance=.00003))
+        #phase2 /= abs(phase2)
+        #phase2 = phase2**-2
+        #print((phase2))
+        self.qd.phase = -1
+        saddles = self.analyzer.saddle_trajectory(zero2+zero3, zero3, [zero2+zero3, zero3])
 
 
-        critical_trajectories = self.analyzer.critical_trajectories_zeros(phase)
+        critical_trajectories = self.analyzer.critical_trajectories_zeros(-1)
 
-        plotter = qd.MatplotlibPlotter(self.qd)
-        plotter.plot(critical_trajectories)
+        plotter = qd.MatplotlibPlotter(self.qd, trajectories=critical_trajectories)
+        plotter.saddle_trajectories.update(saddles)
+        plotter.plot(plotter.get_trajectories(simplify=False))
 
 
 

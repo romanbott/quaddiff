@@ -23,6 +23,7 @@ class BasePlotter(object):
         self.plotpoints = []
         self.trajectories = {} if trajectories is None else trajectories
         self.phases = []
+        self.saddle_trajectories = {}
 
         self.solver = TrajectorySolver(self.qd)
         if solver_params is not None:

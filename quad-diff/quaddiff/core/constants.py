@@ -14,7 +14,7 @@ LIM = 30
 
 # ---- Trajectory constants
 # Simplification
-DISTANCE_2LINE = 0.03
+DISTANCE_2LINE = 0.001
 MIN_DISTANCE = 0.01
 #Refining
 MAX_DISTANCE = 0.001

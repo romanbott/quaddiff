@@ -1,7 +1,7 @@
 import cmath as cm
 
 from .. import QuadraticDifferential
-from .. import TrajectorySolver
+from .. import TrajectorySolver, Trajectory
 
 from ..core.constants import *  # pylint: disable=wildcard-import
 
@@ -26,6 +26,7 @@ class Analyzer(object):
         """Computes critical trajectories for the given zero"""
 
         solver = TrajectorySolver(self.qd)
+        solver.lim = 1000
         solver.close_2pole = self.close_2pole
         solver.close_2zero = self.epsilon / self.factor
         solver.max_step = self.max_step
@@ -111,6 +112,7 @@ class Analyzer(object):
         """Computes critical trajectories for all zeros"""
 
         solver = TrajectorySolver(self.qd)
+        solver.lim = 1000
         solver.close_2pole = self.close_2pole
         solver.close_2zero = self.epsilon / self.factor
         solver.max_step = self.max_step
@@ -139,6 +141,22 @@ class Analyzer(object):
         arguments = [(point, phase)
                      for point in points]
         return arguments
+
+    def saddle_trajectory(self, zero1, zero2, path):
+        """Compute saddle trajectory from zero1 to zero2"""
+        integration_path = Trajectory(path)
+        integral = self.qd.integrate(
+            integration_path.refine(max_distance=0.01))
+        phase = integral/abs(integral)
+        print(integral)
+        phase = phase**-2
+        critical_trajectories = self.critical_trajectories_zero(
+            zero1, phase=phase)
+        return critical_trajectories
+
+
+
+
 
 def same_zone(trajectory1, trajectory2, close=0.01):
     first1 = trajectory1[0]
