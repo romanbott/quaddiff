@@ -69,7 +69,7 @@ class BasePlotter(object):
             progressbar=progressbar)
         self.trajectories.update(new_trajectories)
 
-    def get_trajectories(self, phase=None, plotpoint=None, simplify=True):
+    def get_trajectories(self, phase=None, plotpoint=None, simplify=False):
         if plotpoint is not None:
             if plotpoint not in self.plotpoints:
                 msg = "Plotpoint selected is not in plotpoint list"
@@ -139,7 +139,7 @@ class BasePlotter(object):
         self.trajectories.update(parsed_trajectories)
         return parsed_trajectories
 
-    def get_phase_plot(self, phase, calculate=True, **kwargs):
+    def get_phase_plot(self, phase, calculate=True, simplify=False, **kwargs):
         if calculate:
             if phase not in self.phases:
                 self.add_phase(phase)
@@ -150,10 +150,10 @@ class BasePlotter(object):
                 msg += " add phase to phase list and re-calculate"
                 msg += " the trajectories."
                 raise ValueError(msg)
-        lines = self.get_trajectories(phase=phase)
+        lines = self.get_trajectories(phase=phase, simplify=simplify)
         self.plot(lines, **kwargs)
 
-    def get_point_plot(self, plotpoint, calculate=True, **kwargs):
+    def get_point_plot(self, plotpoint, calculate=True, simplify=False, **kwargs):
         if calculate:
             if plotpoint not in self.plotpoints:
                 self.add_plotpoint(plotpoint)
@@ -164,7 +164,7 @@ class BasePlotter(object):
                 msg += " add phase to phase list and re-calculate"
                 msg += " the trajectories."
                 raise ValueError(msg)
-        lines = self.get_trajectories(plotpoint=plotpoint)
+        lines = self.get_trajectories(plotpoint=plotpoint, simplify=simplify)
         self.plot(lines, **kwargs)
 
     def __repr__(self):

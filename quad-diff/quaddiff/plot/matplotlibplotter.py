@@ -33,8 +33,7 @@ class MatplotlibPlotter(BasePlotter):
             colors=None,
             linestyles=None,
             cmap=None,
-            w_plotpoints=False,
-            simplify=True):
+            w_plotpoints=False):
 
         if linewidths is None:
             linewidths = self.linewidths
@@ -44,13 +43,6 @@ class MatplotlibPlotter(BasePlotter):
             cmap = self.cmap
         if linestyles is None:
             linestyles = self.linestyles
-
-        if simplify:
-            lines = {
-                key: value.simplify(
-                    distance_2line=self.distance_2line,
-                    min_distance=self.min_distance)
-                for key, value in lines.iteritems()}
 
         collection = LineCollection(
             tuple([[(z.real, z.imag) for z in l] for l in lines.values()]),
