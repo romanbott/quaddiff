@@ -83,10 +83,10 @@ class TrajectoryTests(unittest.TestCase):
 
         first_is_in_y_axis = abs(first.real) <= 0.1
         first_close_2_boundary = constants.LIM <= abs(first) and \
-            abs(first) <= constants.LIM + constants.MAX_STEP
+            abs(first) <= constants.LIM + 2 * constants.MAX_STEP
         last_is_in_x_axis = abs(last.imag) <=  0.1
         last_close_2_boundary = constants.LIM <= abs(last) and \
-            abs(last) <= constants.LIM + constants.MAX_STEP
+            abs(last) <= constants.LIM + 2 * constants.MAX_STEP
 
         self.assertTrue(first_close_2_boundary)
         self.assertTrue(first_is_in_y_axis)
@@ -111,8 +111,8 @@ class TrajectoryTests(unittest.TestCase):
             start = trajectory[0]
             final = trajectory[-1]
 
-            closestart = abs(start - point) <= constants.CLOSE_2START
-            closefinal = abs(final - point) <= constants.CLOSE_2START
+            closestart = abs(start - point) <= 1.1 * constants.CLOSE_2START
+            closefinal = abs(final - point) <= 1.1 * constants.CLOSE_2START
             self.assertTrue(closestart)
             self.assertTrue(closefinal)
 
@@ -121,17 +121,12 @@ class TrajectoryTests(unittest.TestCase):
         self.qd.zeros = []
         self.qd.add_dblpole(0)
 
-        points = [0.6634486760787831+0.748221794797044j]
+        points = [0.6634486760787831 + 0.748221794797044j]
         for point in points:
             trajectory = self.trajectory.calculate(point)
-            last = trajectory[-1]
-            first = trajectory[0]
-            first_close_2_zero = abs(first) <= constants.CLOSE_2POLE
-            last_close_2_zero = abs(last) <= constants.CLOSE_2POLE
-            converges_2_zero = first_close_2_zero | last_close_2_zero
-            self.assertTrue(converges_2_zero)
+            self.assertTrue(trajectory.converges(0))
 
-    @unittest.skip("")
+    # @unittest.skip("")
     def test_qdiff_with_dblpole_trajectory(self):
         self.qd.phase = cm.rect(1, 0.99 * cm.pi)
         self.qd.zeros = []
@@ -149,8 +144,6 @@ class TrajectoryTests(unittest.TestCase):
             converges_2_zero = first_close_2_zero | last_close_2_zero
             converges_2_infty = first_close_2_infty | last_close_2_infty
 
-            if not converges_2_zero or not converges_2_infty:
-                print(abs(first), abs(last))
             self.assertTrue(converges_2_zero)
             self.assertTrue(converges_2_infty)
 

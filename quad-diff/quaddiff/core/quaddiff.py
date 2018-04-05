@@ -51,10 +51,6 @@ class QuadraticDifferential(object):
         return len(self.zeros) + len(self.dblpoles) + len(self.smplpoles)
 
     def __call__(self, z, ignore_zero=False, phase=None, normalize=False):
-        # Check if any zeros or poles have been defined
-        if self.size == 0:
-            msg = "Quadratic Differential is empty:\n {}".format(self)
-
         # Remove argument from list of zeros if ignore_zero
         zeros = self.zeros
         if z in self.zeros:
@@ -156,20 +152,6 @@ class QuadraticDifferential(object):
         integral_contributions = average_value * dl
 
         return np.sum(integral_contributions)
-
-    def intrinsic_length_2(self, trajectory):
-        starting_point = trajectory[0]
-        value = 0
-        for point in trajectory[1:]:
-            dl = abs(point - starting_point)
-
-            quad_value0 = sqrt(abs(self(starting_point)))
-            quad_value1 = sqrt(abs(self(point)))
-            avg_quad_value = (quad_value0 + quad_value1) / 2
-
-            value += dl * avg_quad_value
-            starting_point = point
-        return value
 
     def save(self, path, name='quad_diff'):
         fname = os.path.join(path, name + '.json')

@@ -76,9 +76,6 @@ class RandomTests(unittest.TestCase):
         lenght = quad.intrinsic_length(trajectory)
         self.assertEqual(round(abs(lenght - abs(2 + 3j)), 3), 0)
 
-        length2 = quad.intrinsic_length_2(trajectory)
-        self.assertEqual(round(abs(length2 - abs(2 + 3j)), 3), 0)
-
 
 if __name__ == '__main__':
     unittest.main()

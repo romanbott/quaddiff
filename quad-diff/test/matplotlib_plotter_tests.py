@@ -11,7 +11,7 @@ sys.path.insert(
 import quaddiff as qd  # pylint: disable=wrong-import-position
 import quaddiff.core.constants as constants
 from quaddiff.plot.matplotlibplotter import MatplotlibPlotter
-
+from quaddiff.plot.matplotlibplotter import complex2XY
 
 
 class MatplotlibPlotterTests(unittest.TestCase):
@@ -19,15 +19,10 @@ class MatplotlibPlotterTests(unittest.TestCase):
         self.qd = qd.QuadraticDifferential()
         self.plot = qd.MatplotlibPlotter(self.qd)
 
-
-
     def test_complex2XY(self):
-        X, Y = self.plot._complex2XY([1+1j, 2j])
-        print X, Y
-        self.assertEqual(X, (1.0,0.0))
-        self.assertEqual(Y, (1.0,2.0))
-        
-        
+        X, Y = complex2XY([1+1j, 2j])
+        self.assertEqual(X, (1.0, 0.0))
+        self.assertEqual(Y, (1.0, 2.0))
 
 
 if __name__ == '__main__':

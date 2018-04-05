@@ -74,7 +74,6 @@ class AnalyzerTests(unittest.TestCase):
         plotter.plot(plotter.get_trajectories(simplify=False))
 
 
-
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     unittest.main()

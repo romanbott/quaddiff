@@ -10,7 +10,7 @@ from .utils import INF
 
 class QD(object):
     def __init__(self, qd=None, plotter=None):
-        self.qd = QuadraticDifferential()
+        self.qd = QuadraticDifferential()  # pylint: disable=invalid-name
         self.plotter = MatplotlibPlotter(self.qd)
         self.analyzer = Analyzer(self.qd)
 
@@ -39,8 +39,8 @@ class QD(object):
     def add_phase(self, phase):
         self.plotter.add_phase(phase)
 
-    def phase_plot(self, phase):
-        self.plotter.get_phase_plot(phase)
+    def phase_plot(self, phase, **kwargs):
+        self.plotter.get_phase_plot(phase, **kwargs)
 
     def point_plot(self, point):
         self.plotter.get_point_plot(point)

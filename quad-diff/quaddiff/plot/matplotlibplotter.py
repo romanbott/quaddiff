@@ -25,6 +25,71 @@ class MatplotlibPlotter(BasePlotter):
     animation_interval = 200
     format = 'png'
 
+    def plot_lines(
+            self,
+            lines,
+            ax,
+            linewidths=None,
+            colors=None,
+            linestyles=None,
+            cmap=None,
+            w_plotpoints=False,
+            simplify=True):
+
+        if linewidths is None:
+            linewidths = self.linewidths
+        if colors is None:
+            colors = self.colors
+        if cmap is None:
+            cmap = self.cmap
+        if linestyles is None:
+            linestyles = self.linestyles
+
+        if simplify:
+            lines = {
+                key: value.simplify(
+                    distance_2line=self.distance_2line,
+                    min_distance=self.min_distance)
+                for key, value in lines.iteritems()}
+
+        collection = LineCollection(
+            tuple([[(z.real, z.imag) for z in l] for l in lines.values()]),
+            linewidths=linewidths,
+            colors=colors,
+            linestyles=linestyles,
+            cmap=cmap)
+        ax.add_collection(collection)
+
+        if w_plotpoints:
+            # Plotpoints
+            plotpoints = [t.basepoint for t in lines.values()]
+            real, imag = complex2XY(plotpoints)
+            plt.plot(real, imag, self.plotpoints_marker, label='plotpoints')
+
+    def plot_zeros(self):
+        if self.qd.zeros:
+            real, imag = complex2XY(self.qd.zeros)
+            plt.plot(real, imag, self.zero_marker, label='zeros')
+
+    def plot_smplpoles(self):
+        if self.qd.smplpoles:
+            real, imag = complex2XY(self.qd.smplpoles)
+            plt.plot(real, imag, self.smplpole_marker, label='simple poles')
+
+    def plot_dblpoles(self):
+        if self.qd.dblpoles:
+            real, imag = complex2XY(self.qd.dblpoles)
+            plt.plot(real, imag, self.dblpole_marker, label='double poles')
+
+    def plot_saddles(self, ax):
+        collection = LineCollection(
+            tuple([[(z.real, z.imag) for z in line] for line in self.saddle_trajectories.values()]),
+            linewidths=self.linewidths,
+            colors=['red'],
+            linestyles=self.linestyles,
+            cmap=self.cmap)
+        ax.add_collection(collection)
+
     def plot(self, lines, show=True, save=None, dir='.'):
         fig, ax = plt.subplots()
 
@@ -44,26 +109,6 @@ class MatplotlibPlotter(BasePlotter):
             path = os.path.join(dir, save)
             plt.savefig('{}.{}'.format(path, self.format))
         plt.close()
-
-    def plot_lines(self, lines, ax):
-        lines = {
-                key: value.simplify(
-                    distance_2line=self.distance_2line,
-                    min_distance=self.min_distance)
-                for key, value in lines.iteritems()
-            }
-
-        collection = LineCollection(
-            tuple([[(z.real, z.imag) for z in line] for line in lines.values()]),
-            linewidths=self.linewidths,
-            colors=self.colors,
-            linestyles=self.linestyles,
-            cmap=self.cmap)
-        # Plotpoints
-        plotpoints = [t.basepoint for t in lines.values()]
-        X, Y = zip(*[(z.real, z.imag) for z in plotpoints])
-        plt.plot(X, Y, self.plotpoints_marker, label='plotpoints')
-        ax.add_collection(collection)
 
     def animate(self, save=None, show=True):
 
@@ -91,30 +136,7 @@ class MatplotlibPlotter(BasePlotter):
         if show:
             plt.show()
 
-    def plot_zeros(self):
-        if self.qd.zeros:
-            X, Y = complex2XY(self.qd.zeros)
-            plt.plot(X, Y, self.zero_marker, label='zeros')
-
-    def plot_smplpoles(self):
-        if self.qd.smplpoles:
-            X, Y = complex2XY(self.qd.smplpoles)
-            plt.plot(X, Y, self.smplpole_marker, label='simple poles')
-
-    def plot_dblpoles(self):
-        if self.qd.dblpoles:
-            X, Y = complex2XY(self.qd.dblpoles)
-            plt.plot(X, Y, self.dblpole_marker, label='double poles')
-
-    def plot_saddles(self, ax):
-        collection = LineCollection(
-            tuple([[(z.real, z.imag) for z in line] for line in self.saddle_trajectories.values()]),
-            linewidths=self.linewidths,
-            colors=['red'],
-            linestyles=self.linestyles,
-            cmap=self.cmap)
-        ax.add_collection(collection)
 
 def complex2XY(complex_list):
-    x, y = zip(*[(z.real, z.imag) for z in complex_list])
-    return x, y
+    real, imag = zip(*[(z.real, z.imag) for z in complex_list])
+    return real, imag

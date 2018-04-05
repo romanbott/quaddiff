@@ -200,9 +200,24 @@ def calculate_ray(
     sqrt_monodromy = Monodromy(quad(starting_point))
 
     velocity_scale = parameters.get('velocity_scale', VELOCITY_SCALE)
+    zeros = quad.zeros
+    simple_poles = quad.smplpoles
+    double_poles = quad.dblpoles
     def vector_field(t, y):  # pylint: disable=invalid-name
         comp = complex(*y)
-        value = sqrt_monodromy(quad(comp, phase=phase, normalize=True).conjugate())
+
+        # Unbound quadratic differential evaluation
+        value = phase
+        for zero in zeros:
+            value *= (comp - zero) / abs(comp - zero)
+
+        for smppole in simple_poles:
+            value *= ((comp - smppole) / abs(comp - smppole))**-1
+
+        for dblpole in double_poles:
+            value *= ((comp - dblpole) / abs(comp - dblpole))**-2
+
+        value = sqrt_monodromy(value.conjugate())
         value *= velocity_scale
         if abs(comp) > parameters.get('lim', LIM) / 100.0:
             value *= abs(comp)

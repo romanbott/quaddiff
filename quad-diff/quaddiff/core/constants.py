@@ -9,7 +9,7 @@ MAX_STEP = 0.5
 # Event constants
 CLOSE_2START = 0.05
 CLOSE_2POLE = 0.1
-CLOSE_2ZERO = 0.05
+CLOSE_2ZERO = 0.005
 LIM = 30
 
 # ---- Trajectory constants
