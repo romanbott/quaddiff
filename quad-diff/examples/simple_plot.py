@@ -6,6 +6,7 @@ sys.path.insert(
 import quaddiff as qd
 import numpy as np
 
+
 quad = qd.QD()
 
 # Build quadratic differential

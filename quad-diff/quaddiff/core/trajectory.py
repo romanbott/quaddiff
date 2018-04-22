@@ -141,9 +141,10 @@ class TrajectorySolver(object):
 
         parameters = self.get_parameters()
 
-        positive_trajectory = calculate_ray(
+        # TODO
+        positive_trajectory = calculate_ray_3(
             point, self.qd, parameters=parameters, phase=phase)
-        negative_trajectory = calculate_ray(
+        negative_trajectory = calculate_ray_3(
             point, self.qd, sign=-1, parameters=parameters, phase=phase)
 
         trajectory = list(reversed(negative_trajectory)) + \
@@ -202,7 +203,7 @@ def calculate_ray(
     m_point = [quad(starting_point, normalize=True)]
     m_phase = [cm.phase(m_point[0])]
 
-    # Get quadratic differential information 
+    # Get quadratic differential information
     zeros = quad.zeros
     simple_poles = quad.smplpoles
     double_poles = quad.dblpoles
@@ -353,4 +354,104 @@ def calculate_ray_2(
         max_step=max_step)
 
     return [complex(*point) for point in solution['y'].T]
+
+
+def calculate_ray_3(
+        starting_point,
+        quad,
+        sign=1,
+        parameters=None,
+        phase=None):
+
+    """Calculate a ray solution to the Quadratic Differential."""
+    # Check for new phase
+    if phase is None:
+        phase = quad.phase
+
+    # Check for parameters
+    if parameters is None:
+        parameters = {}
+
+    velocity_scale = parameters.get('velocity_scale', VELOCITY_SCALE)
+
+    # Monodromy
+    m_point = [quad(starting_point, normalize=True)]
+    m_phase = [cm.phase(m_point[0])]
+
+    # Get quadratic differential information
+    zeros = quad.zeros
+    simple_poles = quad.smplpoles
+    double_poles = quad.dblpoles
+    lim = parameters.get('lim', LIM)
+    def vector_field(t, y):  # pylint: disable=invalid-name
+        comp = complex(*y)
+
+        # Unbound quadratic differential evaluation
+        value = reduce(lambda x, z: x * ((comp - z) / abs(comp - z)), zeros, phase)
+        value = reduce(lambda x, z: x * ((comp - z) / abs(comp - z))**-1, simple_poles, value)
+        value = reduce(lambda x, z: x * ((comp - z) / abs(comp - z))**-2, double_poles, value)
+
+        # Update monodromy
+        arg_change = cm.phase(value / m_point[0])
+        m_phase[0] += arg_change
+        m_point[0] = value
+
+        # Select sqrt branch
+        if (m_phase[0] - cm.pi) % (4 * cm.pi) < (2 * cm.pi):
+            factor = -1
+        else:
+            factor = 1
+
+        value = sign * velocity_scale * factor * cm.sqrt(value.conjugate())
+        if abs(comp) > lim / 3.0:
+            value *= abs(comp)
+
+        return value.real, value.imag
+
+    # Termination events
+    far = parameters.get('lim', LIM)
+    center = parameters.get('center', 0j)
+    def far_away(t, y):  # pylint: disable=invalid-name
+        comp = complex(*y)
+        return abs(comp - center) < far
+    far_away.terminal = True
+
+    close = parameters.get('close_2pole', CLOSE_2POLE)
+    def close_2pole(t, y):  # pylint: disable=invalid-name
+        comp = complex(*y)
+        distance = far
+        for pole in simple_poles:
+            distance = min(distance, abs(comp - pole))
+        for pole in double_poles:
+            distance = min(distance, abs(comp - pole))
+        return distance > close
+    close_2pole.terminal = True
+
+    close = parameters.get('close_2start', CLOSE_2START)
+    def close_2start(t, y):  # pylint: disable=invalid-name
+        comp = complex(*y)
+        return (t < 100) + (abs(comp - starting_point) > close)
+    close_2start.terminal = True
+
+    close = parameters.get('close_2zero', CLOSE_2ZERO)
+    def close_2zero(t, y):
+        comp = complex(*y)
+        distance = far
+        for zero in zeros:
+            distance = min(distance, abs(zero - comp))
+        return distance > close
+    close_2zero.terminal = True
+
+    # Calculate solution with solve_ivp
+    max_time = parameters.get('max_time', MAX_TIME)
+    max_step = parameters.get('max_step', MAX_STEP)
+    solution = solve_ivp(
+        vector_field,
+        (0, max_time),
+        np.array([starting_point.real, starting_point.imag]),
+        events=[far_away, close_2pole, close_2start, close_2zero],
+        max_step=max_step)
+
+    return [complex(*point) for point in solution['y'].T]
+
 

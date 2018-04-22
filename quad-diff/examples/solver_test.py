@@ -45,7 +45,7 @@ def main():
             quad.add_smplpole(complex(*pole))
 
         for pole in dbl_poles:
-            quad.add_dblpole(complex(*pole))
+            quad.add_dblpole(complex(*pole)) #bla bal
 
         plotpoint = complex(*np.random.uniform(-5, 5, size=[2]))
 
