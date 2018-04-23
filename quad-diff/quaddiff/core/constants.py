@@ -2,11 +2,10 @@
 
 # ---- Trajectory Solver constants
 # Integration constants
-MAX_TIME = 1000000
-# VELOCITY_SCALE = 0.02
+MAX_TIME = 1000
 VELOCITY_SCALE = 0.02
-# MAX_STEP = 0.5
-MAX_STEP = 0.5
+MAX_STEP = .5
+MIN_TIME = 10
 
 # Event constants
 CLOSE_2START = 0.05

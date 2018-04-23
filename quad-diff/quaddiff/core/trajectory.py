@@ -141,10 +141,9 @@ class TrajectorySolver(object):
 
         parameters = self.get_parameters()
 
-        # TODO
-        positive_trajectory = calculate_ray_3(
+        positive_trajectory = calculate_ray(
             point, self.qd, parameters=parameters, phase=phase)
-        negative_trajectory = calculate_ray_3(
+        negative_trajectory = calculate_ray(
             point, self.qd, sign=-1, parameters=parameters, phase=phase)
 
         trajectory = list(reversed(negative_trajectory)) + \
@@ -280,7 +279,7 @@ def calculate_ray(
         vector_field,
         (0, max_time),
         np.array([starting_point.real, starting_point.imag]),
-        events=[far_away, close_2pole, close_2start, close_2zero],
+        # events=[far_away, close_2pole, close_2start, close_2zero],
         max_step=max_step)
 
     return [complex(*point) for point in solution['y'].T]
@@ -355,11 +354,9 @@ def calculate_ray_2(
 
     return [complex(*point) for point in solution['y'].T]
 
-
-def calculate_ray_3(
-        starting_point,
+def calculate_ray_vectorized(
+        starting_points,
         quad,
-        sign=1,
         parameters=None,
         phase=None):
 
@@ -367,80 +364,68 @@ def calculate_ray_3(
     # Check for new phase
     if phase is None:
         phase = quad.phase
+    if isinstance(phase, (int, float, complex)):
+        phase = np.array([phase for _ in starting_points], dtype=np.complex)
+    if isinstance(phase, (list, tuple)):
+        phase = np.array(phase, dtype=np.complex)
+    if isinstance(starting_points, (list, tuple)):
+        starting_points = np.array(starting_points, dtype=np.complex)
 
     # Check for parameters
     if parameters is None:
         parameters = {}
 
-    velocity_scale = parameters.get('velocity_scale', VELOCITY_SCALE)
 
     # Monodromy
-    m_point = [quad(starting_point, normalize=True)]
-    m_phase = [cm.phase(m_point[0])]
+    m_points = np.array([quad(point, normalize=True) for point in starting_points], dtype=np.complex)
+    m_phases = np.array([cm.phase(point) for point in m_points], dtype=np.float)
+
+    # Duplicate for two-directional solving
+    sign = np.concatenate([np.ones_like(starting_points), -np.ones_like(starting_points)])
+    starting_points = np.concatenate([starting_points, starting_points])
+    phase = np.concatenate([phase, phase])
+    m_points = np.concatenate([m_points, m_points])
+    m_phases = np.concatenate([m_phases, m_phases])
 
     # Get quadratic differential information
     zeros = quad.zeros
     simple_poles = quad.smplpoles
     double_poles = quad.dblpoles
-    lim = parameters.get('lim', LIM)
-    def vector_field(t, y):  # pylint: disable=invalid-name
-        comp = complex(*y)
 
+    # Get parameter information
+    lim = parameters.get('lim', LIM)
+    far = parameters.get('lim', LIM)
+    velocity_scale = parameters.get('velocity_scale', VELOCITY_SCALE)
+    center = parameters.get('center', 0j)
+    close_pole = parameters.get('close_2pole', CLOSE_2POLE)
+    close_zero = parameters.get('close_2zero2', CLOSE_2ZERO)
+    close_start = parameters.get('close_2start', CLOSE_2START)
+    min_time = parameters.get('min_time', MIN_TIME)
+    def vector_field(t, y):  # pylint: disable=invalid-name
         # Unbound quadratic differential evaluation
-        value = reduce(lambda x, z: x * ((comp - z) / abs(comp - z)), zeros, phase)
-        value = reduce(lambda x, z: x * ((comp - z) / abs(comp - z))**-1, simple_poles, value)
-        value = reduce(lambda x, z: x * ((comp - z) / abs(comp - z))**-2, double_poles, value)
+        value = phase.copy()
+
+        for zero in zeros:
+            value *= ((y - zero) / np.absolute(y - zero))
+
+        for smppole in simple_poles:
+            value *= np.power(((y - smppole) / np.absolute(y - smppole)), -1)
+
+        for dblpole in double_poles:
+            value *= np.power(((y - dblpole) / np.absolute(y - dblpole)), -2)
 
         # Update monodromy
-        arg_change = cm.phase(value / m_point[0])
-        m_phase[0] += arg_change
-        m_point[0] = value
+        arg_change = np.angle(value / m_points)
+        m_phases[:] += arg_change
+        m_points[:] = value
 
         # Select sqrt branch
-        if (m_phase[0] - cm.pi) % (4 * cm.pi) < (2 * cm.pi):
-            factor = -1
-        else:
-            factor = 1
+        factors = 1 - 2 * (np.mod(m_phases - cm.pi, 4 * cm.pi) < (2 * cm.pi))
 
-        value = sign * velocity_scale * factor * cm.sqrt(value.conjugate())
-        if abs(comp) > lim / 3.0:
-            value *= abs(comp)
+        value = sign[:] * velocity_scale * factors * np.sqrt(np.conj(value))
+        value *= ((np.absolute(y) > (lim / 3.0)) * np.absolute(y) + (np.absolute(y) <= (lim / 3.0)))
 
-        return value.real, value.imag
-
-    # Termination events
-    far = parameters.get('lim', LIM)
-    center = parameters.get('center', 0j)
-    def far_away(t, y):  # pylint: disable=invalid-name
-        comp = complex(*y)
-        return abs(comp - center) < far
-    far_away.terminal = True
-
-    close = parameters.get('close_2pole', CLOSE_2POLE)
-    def close_2pole(t, y):  # pylint: disable=invalid-name
-        comp = complex(*y)
-        distance = far
-        for pole in simple_poles:
-            distance = min(distance, abs(comp - pole))
-        for pole in double_poles:
-            distance = min(distance, abs(comp - pole))
-        return distance > close
-    close_2pole.terminal = True
-
-    close = parameters.get('close_2start', CLOSE_2START)
-    def close_2start(t, y):  # pylint: disable=invalid-name
-        comp = complex(*y)
-        return (t < 100) + (abs(comp - starting_point) > close)
-    close_2start.terminal = True
-
-    close = parameters.get('close_2zero', CLOSE_2ZERO)
-    def close_2zero(t, y):
-        comp = complex(*y)
-        distance = far
-        for zero in zeros:
-            distance = min(distance, abs(zero - comp))
-        return distance > close
-    close_2zero.terminal = True
+        return value
 
     # Calculate solution with solve_ivp
     max_time = parameters.get('max_time', MAX_TIME)
@@ -448,10 +433,63 @@ def calculate_ray_3(
     solution = solve_ivp(
         vector_field,
         (0, max_time),
-        np.array([starting_point.real, starting_point.imag]),
-        events=[far_away, close_2pole, close_2start, close_2zero],
+        starting_points,
         max_step=max_step)
 
-    return [complex(*point) for point in solution['y'].T]
+    cleaned = clean_trajectories(solution, starting_points, quad, parameters)
+
+    return cleaned
+
+
+def clean_trajectories(solution, start, quad, parameters):
+    points = solution['y']
+    times = solution['t']
+
+    num_trajectories = points.shape[0]
+    max_len = points.shape[1]
+    index_array = max_len * np.ones([num_trajectories], dtype=np.int)
+
+    # parameters
+    close_zero = parameters.get('close_2zero', CLOSE_2ZERO)
+    close_start = parameters.get('close_2start', CLOSE_2START)
+    close_pole = parameters.get('close_2pole', CLOSE_2POLE)
+    far = parameters.get('lim', LIM)
+    min_time = parameters.get('min_time', MIN_TIME)
+
+    # pole info
+    zeros = quad.zeros
+    poles = quad.smplpoles + quad.dblpoles
+
+    for num, (y, t) in enumerate(zip(points.T, times)):
+        # where
+        where = index_array == max_len
+
+        # Check if all index have satisfied some condition
+        if np.amax(where) == 0:
+            break
+
+        # distance to pole
+        distance_2zero = np.ones([num_trajectories]) * far
+        for zero in quad.zeros:
+            distance_2zero = np.minimum(distance_2zero, np.absolute(y - zero))
+        close_2zero = distance_2zero < close_zero
+
+        distance_2pole = np.ones([num_trajectories]) * far
+        for pole in poles:
+            distance_2pole = np.minimum(distance_2pole, np.absolute(y - pole))
+        close_2pole = distance_2pole < close_pole
+
+        close_2start = (np.absolute(y - start) < close_start) * (t > min_time)
+
+        is_far = np.absolute(y) > far
+
+        terminate = close_2zero + close_2pole + close_2start + is_far
+
+        index_array[where * (terminate > 0)] = num
+
+    print(index_array != max_len)
+    blabla = np.argwhere(index_array == max_len)
+
+    return blabla, [trajectory[:index] for trajectory, index in zip(points, index_array)]
 
 
